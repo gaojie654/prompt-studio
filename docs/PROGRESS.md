@@ -23,10 +23,10 @@
 | 任务 | 类型 | 负责人 | 预计工时 | 状态 | 备注 |
 |------|------|--------|----------|------|------|
 | 项目初始化 | setup | Agent | 2h | 🔴 | - |
-| 数据库设计 | architecture | Agent | 4h | 🔴 | - |
-| 后端框架搭建 | backend | Agent | 4h | 🔴 | - |
-| 前端框架搭建 | frontend | Agent | 4h | 🔴 | - |
-| CI/CD配置 | DevOps | Agent | 4h | 🔴 | - |
+| 数据库设计 | architecture | Agent | 4h | 🟡 | 进行中 |
+| 后端框架搭建 | backend | Agent | 4h | 🟡 | 进行中 |
+| 前端框架搭建 | frontend | Agent | 4h | 🟡 | 进行中 |
+| CI/CD配置 | DevOps | Agent | 4h | 🟡 | 进行中 |
 
 **燃尽图**: ░░░░░░░░░░ 0%
 

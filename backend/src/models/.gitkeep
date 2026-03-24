@@ -1,0 +1,2 @@
+// Data models are defined in prisma/schema.prisma
+// Prisma generates TypeScript types based on the schema

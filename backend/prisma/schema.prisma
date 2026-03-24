@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum MembershipTier {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  ALIPAY
+  WECHAT
+  POINTS
+}
+
+model User {
+  id            String    @id @default(cuid())
+  phone         String    @unique
+  password      String
+  nickname      String?
+  avatar        String?
+  role          Role      @default(USER)
+  balance       Float     @default(0)
+  memberType    MembershipTier @default(FREE)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  prompts        Prompt[]
+  images         Image[]
+  orders         Order[]
+  membership     Membership?
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Prompt {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  description String?  @db.Text
+  category    String?
+  tags        String[]
+  isPublic    Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+  viewCount   Int      @default(0)
+  likeCount   Int      @default(0)
+  useCount    Int      @default(0)
+  price       Float    @default(0)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("prompts")
+}
+
+model Image {
+  id              String   @id @default(cuid())
+  url             String?
+  filename        String?
+  size            Int?
+  width           Int?
+  height          Int?
+  mimeType        String?
+  platform        String?
+  sizeType        String?
+  status          String   @default("pending")
+  promptText      String?
+  negativePrompt  String?
+  metadata        Json?
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptId        String?
+  prompt          Prompt?  @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("images")
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  userId         String         @unique
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier           MembershipTier @default(FREE)
+  credits        Int            @default(100)
+  totalCredits   Int            @default(100)
+  expiresAt      DateTime?
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("memberships")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNo         String        @unique
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String        // prompt, image, membership
+  targetId        String?       // promptId, imageId, or membershipTier
+  amount          Float
+  paymentMethod   PaymentMethod
+  status          OrderStatus   @default(PENDING)
+  paidAt          DateTime?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("orders")
+}
