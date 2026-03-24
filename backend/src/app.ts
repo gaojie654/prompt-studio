@@ -15,6 +15,7 @@ import promptRoutes from './routes/prompt.routes';
 import imageRoutes from './routes/image.routes';
 import orderRoutes from './routes/order.routes';
 import membershipRoutes from './routes/membership.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/api/prompts', promptRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/memberships', membershipRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
