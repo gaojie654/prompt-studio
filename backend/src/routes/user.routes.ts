@@ -1,22 +1,25 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../utils/AppError';
+import {
+  getCurrentUser,
+  updateCurrentUser,
+  getBalance,
+  getUserConsumptions,
+  deductBalance,
+} from '../controllers/user.controller';
 
 const router = Router();
 
-router.get('/me', authenticate, asyncHandler(async (req, res) => {
-  // TODO: Get current user
-  res.json({ user: req.user });
-}));
+// 当前用户
+router.get('/me', authenticate, asyncHandler(getCurrentUser));
+router.patch('/me', authenticate, asyncHandler(updateCurrentUser));
 
-router.patch('/me', authenticate, asyncHandler(async (req, res) => {
-  // TODO: Update current user
-  res.json({ message: 'Update user endpoint' });
-}));
+// 余额
+router.get('/balance', authenticate, asyncHandler(getBalance));
+router.patch('/balance/deduct', authenticate, asyncHandler(deductBalance));
 
-router.get('/:id', asyncHandler(async (req, res) => {
-  // TODO: Get user by ID
-  res.json({ message: 'Get user endpoint' });
-}));
+// 消费记录
+router.get('/consumptions', authenticate, asyncHandler(getUserConsumptions));
 
 export default router;

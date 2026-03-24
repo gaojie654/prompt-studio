@@ -1,17 +1,14 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../utils/AppError';
+import { getMembership, upgradeMembership } from '../controllers/membership.controller';
 
 const router = Router();
 
-router.get('/current', authenticate, asyncHandler(async (req, res) => {
-  // TODO: Get current membership
-  res.json({ membership: null });
-}));
+// 获取当前会员信息
+router.get('/', authenticate, asyncHandler(getMembership));
 
-router.post('/upgrade', authenticate, asyncHandler(async (req, res) => {
-  // TODO: Upgrade membership
-  res.json({ message: 'Upgrade membership endpoint' });
-}));
+// 开通/升级会员
+router.post('/activate', authenticate, asyncHandler(upgradeMembership));
 
 export default router;
