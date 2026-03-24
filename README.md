@@ -5,16 +5,32 @@
 ## 📋 开发看板
 
 ### 🔴 待办 (Todo)
-- [ ] 用户系统设计
-- [ ] 数据库架构设计
-- [ ] 前端技术选型
+- [ ] Sprint 1: 基础设施建设
+- [ ] Sprint 2: 核心功能开发
+- [ ] Sprint 3: 平台适配+支付
+- [ ] Sprint 4: 后台管理
 
 ### 🟡 进行中 (In Progress)
-- [ ] 项目架构规划
+- [ ] M1: 需求确认 + 架构设计
+     └─ [Issue #1] 前端界面设计
+     └─ [Issue #2] 后端API开发
+     └─ [Issue #3] 数据库设计
+     └─ [Issue #4] UI/UX设计
 
 ### 🟢 完成 (Done)
 - [x] 项目立项
 - [x] 需求分析
+- [x] GitHub仓库创建
+- [x] 开发文档编写 (docs/DEVELOPMENT.md)
+- [x] 进度表编写 (docs/PROGRESS.md)
+
+## 📚 项目文档
+
+- [📖 开发指南](docs/DEVELOPMENT.md) - 完整技术文档
+- [📊 进度表](docs/PROGRESS.md) - 开发进度追踪
+- [📐 产品规格](docs/SPEC.md) - 产品功能详细规格
+
+---
 
 ## 🎯 产品功能
 
