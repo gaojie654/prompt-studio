@@ -15,6 +15,7 @@ import promptRoutes from './routes/prompt.routes';
 import imageRoutes from './routes/image.routes';
 import orderRoutes from './routes/order.routes';
 import membershipRoutes from './routes/membership.routes';
+import generateRoutes from './routes/generate.routes';
 
 const app = express();
 
@@ -56,12 +57,13 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/prompts', promptRoutes);
-app.use('/api/images', imageRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/memberships', membershipRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/prompts', promptRoutes);
+app.use('/api/v1/images', imageRoutes);
+app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/memberships', membershipRoutes);
+app.use('/api/v1/generate', generateRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

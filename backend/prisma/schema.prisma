@@ -36,13 +36,14 @@ enum PaymentMethod {
 
 model User {
   id            String    @id @default(cuid())
-  email         String    @unique
+  phone         String    @unique
   password      String
-  name          String?
+  nickname      String?
   avatar        String?
   role          Role      @default(USER)
+  balance       Float     @default(0)
+  memberType    MembershipTier @default(FREE)
   isActive      Boolean   @default(true)
-  emailVerified Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -89,18 +90,25 @@ model Prompt {
 }
 
 model Image {
-  id          String   @id @default(cuid())
-  url         String
-  filename    String?
-  size        Int?
-  width       Int?
-  height      Int?
-  mimeType    String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  promptId    String?
-  prompt      Prompt?  @relation(fields: [promptId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  url             String?
+  filename        String?
+  size            Int?
+  width           Int?
+  height          Int?
+  mimeType        String?
+  platform        String?
+  sizeType        String?
+  status          String   @default("pending")
+  promptText      String?
+  negativePrompt  String?
+  metadata        Json?
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptId        String?
+  prompt          Prompt?  @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("images")
 }
