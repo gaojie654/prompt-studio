@@ -1,0 +1,80 @@
+version: '3.9'
+
+services:
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: prompt-studio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-promptstudio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-promptstudio_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-promptstudio}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: mount SQL init scripts
+      # - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-promptstudio} -d ${POSTGRES_DB:-promptstudio}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prompt-studio-network
+
+  # ==========================================
+  # Redis Cache
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: prompt-studio-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prompt-studio-network
+
+  # ==========================================
+  # Optional: pgAdmin (Database GUI)
+  # ==========================================
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: prompt-studio-pgadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@prompt.studio
+  #     PGADMIN_DEFAULT_PASSWORD: admin123
+  #   ports:
+  #     - '5050:80'
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - prompt-studio-network
+
+# ==========================================
+# Volumes
+# ==========================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  prompt-studio-network:
+    driver: bridge
