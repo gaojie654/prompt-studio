@@ -1,6 +1,7 @@
 import prisma from '../utils/prisma';
 import { AppError } from '../utils/AppError';
 import { promptService } from './prompt.service';
+import config from '../config';
 
 // Platform size specifications
 export const PLATFORM_SIZES = {
@@ -23,6 +24,19 @@ export const PLATFORM_SIZES = {
 
 export type PlatformSize = keyof typeof PLATFORM_SIZES;
 
+// Map platform sizes to Wanx size strings
+const PLATFORM_SIZE_MAP: Record<PlatformSize, string> = {
+  xiaohongshu_cover_v: '720*1280',  // 9:16 vertical
+  xiaohongshu_cover_s: '1280*1280', // 1:1 square
+  douyin_cover: '720*1280',        // 9:16 vertical
+  douyin_post: '1280*720',         // 16:9 horizontal
+  gzh_cover: '1200*512',           // approximately 2.35:1
+  gzh_cover_sub: '800*800',        // 1:1 square
+  taobao_main: '1024*1024',        // 1:1 square
+  pdd_main: '1024*480',            // approximately 2.13:1
+  jd_main: '1024*1024',            // 1:1 square
+};
+
 export interface GenerateImageInput {
   userId: string;
   promptId?: string;
@@ -32,10 +46,39 @@ export interface GenerateImageInput {
   negativePrompt?: string;
 }
 
+export interface WanxGenerateParams {
+  promptText: string;
+  size: string;
+  negativePrompt?: string;
+  imageUrl?: string;
+}
+
+export interface WanxResponse {
+  output?: {
+    choices?: Array<{
+      finish_reason?: string;
+      message?: {
+        content?: Array<{
+          type: string;
+          image?: string;
+          text?: string;
+        }>;
+        role?: string;
+      };
+    }>;
+    finished?: boolean;
+  };
+  usage?: {
+    image_count?: number;
+    total_tokens?: number;
+    size?: string;
+  };
+  request_id?: string;
+}
+
 export class ImageService {
   /**
-   * Generate an image using AI
-   * Note: This is a mock implementation. Replace with actual AI API calls.
+   * Generate an image using AI (Wanx API)
    */
   async generate(input: GenerateImageInput) {
     const { userId, promptId, platform, imageUrl, prompt: customPrompt, negativePrompt } = input;
@@ -94,52 +137,185 @@ export class ImageService {
       });
     }
 
-    // Mock: In production, this would call the actual AI API
-    // For now, we'll simulate the generation
-    const mockImageUrl = await this.mockGenerateImage({
-      platform,
-      sizeSpec,
-      promptText,
-      imageUrl,
-      negativePrompt,
-    });
+    // Get Wanx size parameter
+    const wanxSize = PLATFORM_SIZE_MAP[platform] || '1280*1280';
 
-    // Update image record with the generated URL
-    const updatedImage = await prisma.image.update({
-      where: { id: image.id },
-      data: { url: mockImageUrl },
-    });
+    // Call Wanx API
+    try {
+      const imageUrlResult = await this.callWanxApi({
+        promptText,
+        size: wanxSize,
+        negativePrompt,
+        imageUrl,
+      });
 
-    // Increment prompt use count
-    if (promptId) {
-      await promptService.incrementUseCount(promptId);
+      // Update image record with the generated URL
+      const updatedImage = await prisma.image.update({
+        where: { id: image.id },
+        data: { url: imageUrlResult },
+      });
+
+      // Increment prompt use count
+      if (promptId) {
+        await promptService.incrementUseCount(promptId);
+      }
+
+      return updatedImage;
+    } catch (error) {
+      // Refund credit on failure
+      if (user.membership) {
+        await prisma.membership.update({
+          where: { userId },
+          data: { credits: { increment: creditsRequired } },
+        });
+      }
+
+      // Re-throw the error
+      throw error;
     }
-
-    return updatedImage;
   }
 
   /**
-   * Mock image generation
-   * Replace this with actual AI API integration (e.g., Wanx, DALL-E, Stable Diffusion)
+   * Call Wanx API to generate an image
    */
-  private async mockGenerateImage(params: {
-    platform: PlatformSize;
-    sizeSpec: { width: number; height: number; name: string };
-    promptText: string;
-    imageUrl?: string;
-    negativePrompt?: string;
-  }): Promise<string> {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
+  private async callWanxApi(params: WanxGenerateParams): Promise<string> {
+    const { promptText, size, negativePrompt, imageUrl } = params;
+    const { apiKey, baseUrl, model, timeout, retryAttempts } = config.wanx;
 
-    // In production, this would:
-    // 1. Upload the reference image to cloud storage if provided
-    // 2. Call the AI image generation API
-    // 3. Wait for the job to complete
-    // 4. Download and store the generated image
+    if (!apiKey) {
+      throw new AppError(
+        'Wanx API key is not configured. Please set WANX_API_KEY in your environment.',
+        500,
+        'WANX_NOT_CONFIGURED'
+      );
+    }
 
-    // For now, return a placeholder URL
-    return `https://placeholder.com/generated/${params.platform}_${Date.now()}.png`;
+    // Build request body
+    const contentArray: Array<{ text?: string; image?: string }> = [
+      { text: promptText },
+    ];
+
+    // Add reference image if provided
+    if (imageUrl) {
+      contentArray.push({ image: imageUrl });
+    }
+
+    const requestBody = {
+      model,
+      input: {
+        messages: [
+          {
+            role: 'user',
+            content: contentArray,
+          },
+        ],
+      },
+      parameters: {
+        size,
+        n: 1,
+        enable_interleave: !!imageUrl,
+        watermark: false,
+        prompt_extend: true,
+        ...(negativePrompt && { negative_prompt: negativePrompt }),
+      },
+    };
+
+    // Make request with retry logic
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= retryAttempts; attempt++) {
+      try {
+        const response = await this.makeRequest(baseUrl, apiKey, requestBody, timeout);
+        return response;
+      } catch (error) {
+        lastError = error as Error;
+
+        // Don't retry on certain errors
+        if (error instanceof AppError) {
+          // Non-retryable errors
+          if (error.code === 'WANX_AUTH_ERROR' || error.code === 'WANX_INVALID_PARAMS') {
+            throw error;
+          }
+        }
+
+        // Wait before retry (exponential backoff)
+        if (attempt < retryAttempts) {
+          const delayMs = Math.pow(2, attempt) * 1000;
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+
+    throw lastError || new AppError('Wanx API call failed after retries', 500, 'WANX_API_ERROR');
+  }
+
+  /**
+   * Make HTTP request to Wanx API
+   */
+  private async makeRequest(
+    baseUrl: string,
+    apiKey: string,
+    requestBody: object,
+    timeout: number
+  ): Promise<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new AppError('Wanx API authentication failed. Please check your API key.', 401, 'WANX_AUTH_ERROR');
+        }
+        if (response.status === 400) {
+          const errorBody = await response.text();
+          throw new AppError(`Wanx API invalid request: ${errorBody}`, 400, 'WANX_INVALID_PARAMS');
+        }
+        if (response.status === 429) {
+          throw new AppError('Wanx API rate limit exceeded. Please try again later.', 429, 'WANX_RATE_LIMIT');
+        }
+        throw new AppError(`Wanx API error: HTTP ${response.status}`, response.status, 'WANX_HTTP_ERROR');
+      }
+
+      const data: WanxResponse = await response.json();
+
+      // Parse response
+      if (!data.output?.choices?.[0]?.message?.content) {
+        throw new AppError('Invalid response from Wanx API', 500, 'WANX_INVALID_RESPONSE');
+      }
+
+      const content = data.output.choices[0].message.content;
+      const imageContent = content.find((c) => c.type === 'image');
+
+      if (!imageContent?.image) {
+        throw new AppError('No image URL in Wanx API response', 500, 'WANX_NO_IMAGE');
+      }
+
+      return imageContent.image;
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      if ((error as Error).name === 'AbortError') {
+        throw new AppError('Wanx API request timed out', 504, 'WANX_TIMEOUT');
+      }
+
+      throw new AppError(`Wanx API request failed: ${(error as Error).message}`, 500, 'WANX_REQUEST_FAILED');
+    }
   }
 
   /**
