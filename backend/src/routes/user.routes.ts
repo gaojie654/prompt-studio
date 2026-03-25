@@ -1,22 +1,22 @@
 import { Router } from 'express';
+import { z } from 'zod';
+import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
-import { asyncHandler } from '../utils/AppError';
+import { getMe, updateMe, getBalance } from '../controllers/user.controller';
 
 const router = Router();
 
-router.get('/me', authenticate, asyncHandler(async (req, res) => {
-  // TODO: Get current user
-  res.json({ user: req.user });
-}));
+const updateUserSchema = z.object({
+  body: z.object({
+    name: z.string().optional(),
+    avatar: z.string().url().optional(),
+  }),
+});
 
-router.patch('/me', authenticate, asyncHandler(async (req, res) => {
-  // TODO: Update current user
-  res.json({ message: 'Update user endpoint' });
-}));
+router.use(authenticate);
 
-router.get('/:id', asyncHandler(async (req, res) => {
-  // TODO: Get user by ID
-  res.json({ message: 'Get user endpoint' });
-}));
+router.get('/me', getMe);
+router.put('/me', validate(updateUserSchema), updateMe);
+router.get('/balance', getBalance);
 
 export default router;
