@@ -16,6 +16,8 @@ import imageRoutes from './routes/image.routes';
 import orderRoutes from './routes/order.routes';
 import membershipRoutes from './routes/membership.routes';
 import adminRoutes from './routes/admin.routes';
+import paymentRoutes from './routes/v1/payment.routes';
+import paymentCallbackRoutes from './routes/v1/payment-callback.routes';
 
 const app = express();
 
@@ -64,6 +66,10 @@ app.use('/api/images', imageRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/memberships', membershipRoutes);
 app.use('/api/v1/admin', adminRoutes);
+
+// Payment routes (v1)
+app.use('/api/v1/payment', paymentRoutes);
+app.use('/api/v1/payment', paymentCallbackRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

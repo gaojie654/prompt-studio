@@ -55,4 +55,34 @@ export default {
     timeout: parseInt(process.env.WANX_TIMEOUT || '120000', 10), // 120s timeout for image generation
     retryAttempts: parseInt(process.env.WANX_RETRY_ATTEMPTS || '2', 10),
   },
+
+  wechat: {
+    mchId: process.env.WECHAT_MCHID,
+    serialNo: process.env.WECHAT_SERIAL_NO,
+    privateKeyPath: process.env.WECHAT_PRIVATE_KEY_PATH,
+    apiv3Key: process.env.WECHAT_APIV3_KEY,
+    appId: process.env.WECHAT_APPID,
+  },
+
+  alipay: {
+    appId: process.env.ALIPAY_APPID,
+    privateKey: process.env.ALIPAY_PRIVATE_KEY,
+    alipayPublicKey: process.env.ALIPAY_ALIPUBLIC_KEY,
+    sandbox: process.env.ALIPAY_SANDBOX !== 'false',
+  },
+
+  storage: {
+    type: process.env.STORAGE_TYPE || 'local',
+    oss: {
+      accessKeyId: process.env.OSS_ACCESS_KEY_ID,
+      accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET,
+      bucket: process.env.OSS_BUCKET,
+      region: process.env.OSS_REGION || 'oss-cn-hangzhou',
+      endpoint: process.env.OSS_ENDPOINT,
+    },
+    local: {
+      basePath: process.env.LOCAL_STORAGE_PATH || './uploads/images',
+      baseUrl: process.env.LOCAL_STORAGE_BASE_URL || 'http://localhost:3000/uploads/images',
+    },
+  },
 };
