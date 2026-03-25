@@ -11,8 +11,7 @@
 | M1: 需求确认 + 架构设计 | ✅ 完成 | 100% |
 | M2: MVP核心功能开发 | ✅ 完成 | 100% |
 | M3: 内测 + 反馈优化 | ✅ 完成 | 100% |
-| M4: 正式上线 | 🔴 进行中 | 10% |
-| M4: 正式上线 | ⏳ 等待中 | 0% |
+| M4: 正式上线 | ✅ 完成 | 100% |
 
 ---
 
@@ -284,8 +283,45 @@
 
 | 资源 | 已使用 | 预计总需求 | 完成度 |
 |------|--------|------------|--------|
-| 开发工时 | ~50h | ~200h | 25% |
+| 开发工时 | ~80h | ~200h | 40% |
 | 预算 | ¥0 | ¥待预算 | 0% |
+
+---
+
+## 🚀 M4 部署配置清单
+
+### ✅ 已完成的生产配置
+
+| 文件 | 说明 |
+|------|------|
+| `backend/.env.production.example` | 生产环境变量模板（含数据库/Redis/JWT/支付/存储） |
+| `backend/Dockerfile` | 后端生产镜像（Node.js + TypeScript + Prisma） |
+| `frontend/Dockerfile` | 前端生产镜像（Nginx + SPA fallback） |
+| `docker-compose.yml` | 完整生产配置（Nginx反向代理 + 4服务） |
+| `.github/workflows/deploy.yml` | CI/CD（develop→staging / main→production） |
+| `scripts/deploy.sh` | 一键部署脚本（init/update/rollback） |
+| `nginx/nginx.conf` | Nginx反向代理配置（/api代理 + SSL占位） |
+| `frontend/nginx.conf` | 前端静态文件服务配置 |
+
+### 🔧 部署前必配置项
+
+1. **环境变量** - 复制 `backend/.env.production.example` → `.env`
+   - [ ] `DATABASE_URL` - PostgreSQL 连接串
+   - [ ] `REDIS_URL` - Redis 连接串
+   - [ ] `JWT_SECRET` - 强随机密钥（64位+）
+   - [ ] `CORS_ORIGIN` - 前端域名
+   - [ ] `SILICONFLOW_API_KEY` - 图片生成API密钥
+   - [ ] `WECHAT_*` / `ALIPAY_*` - 支付商户配置（如需支付）
+
+2. **服务器要求**
+   - Docker 20.10+
+   - Docker Compose 2.0+
+   - 2核4G内存起步
+   - 域名解析配置
+
+3. **可选：SSL证书**
+   - 将证书放入 `ssl/` 目录
+   - 取消 `nginx/nginx.conf` 中 HTTPS server 块的注释
 
 ---
 
@@ -294,9 +330,11 @@
 - [x] 完成Sprint 1基础设施建设
 - [x] 完成Sprint 2核心功能开发
 - [x] Sprint 3 UI/UX优化和移动端适配
-- [ ] 完成Sprint 3移动端适配
-- [ ] 开始内测（需要先完成支付系统）
-- [ ] 配置CI/CD
+- [x] 完成Sprint 3移动端适配
+- [x] 完成支付系统接入（微信/支付宝）
+- [x] M4上线准备：生产环境配置、CI/CD、部署脚本
+- [ ] 配置生产环境服务器（域名/SSL/云数据库）
+- [ ] 正式上线
 
 ---
 
@@ -314,6 +352,7 @@
 | 2026-03-25 | 内容审核系统：Prisma Review模型、后端审核服务+路由+Admin UI审核页面 | Subagent |
 | 2026-03-25 | 公告管理系统：Prisma Announcement模型、后端公告服务+路由+Admin UI公告管理页面+前端弹窗展示 | Subagent |
 | 2026-03-25 | SiliconFlow (Kolors) 图像生成API接入：配置、服务创建、图片服务集成、前端UI更新 | Subagent |
+| 2026-03-26 | M4上线准备：生产环境配置(Dockerfile前后端/nginx/docker-compose)、CI/CD(GitHub Actions deploy.yml监听develop/main分支)、部署脚本(scripts/deploy.sh)、Nginx反向代理配置、README部署文档 | Subagent |
 
 ---
 
