@@ -4,6 +4,7 @@ import { promptService } from './prompt.service';
 import { createReview } from './review.service';
 import config from '../config';
 import { storageService } from './storage/image-storage.service';
+import { siliconflowService } from './siliconflow.service';
 
 // Platform size specifications
 export const PLATFORM_SIZES = {
@@ -37,6 +38,20 @@ const PLATFORM_SIZE_MAP: Record<PlatformSize, string> = {
   taobao_main: '1024*1024',        // 1:1 square
   pdd_main: '1024*480',            // approximately 2.13:1
   jd_main: '1024*1024',            // 1:1 square
+};
+
+// Map platform sizes to SiliconFlow/Kolors size strings
+// Kolors supports: 1024x1024, 768x1344, 1344x768, 768x1344, 1024x1024, 1440x720, 1920x720, 720x1440
+const PLATFORM_SIZE_MAP_SF: Record<PlatformSize, string> = {
+  xiaohongshu_cover_v: '768x1344', // 9:16 portrait
+  xiaohongshu_cover_s: '1024x1024', // 1:1 square
+  douyin_cover: '768x1344',        // 9:16 portrait
+  douyin_post: '1344x768',         // 16:9 horizontal
+  gzh_cover: '1440x720',           // 2:1 banner
+  gzh_cover_sub: '1024x1024',      // 1:1 square
+  taobao_main: '1024x1024',        // 1:1 square
+  pdd_main: '1440x720',            // 2:1 banner (closest supported)
+  jd_main: '1024x1024',            // 1:1 square
 };
 
 export interface GenerateImageInput {
@@ -139,17 +154,35 @@ export class ImageService {
       });
     }
 
-    // Get Wanx size parameter
-    const wanxSize = PLATFORM_SIZE_MAP[platform] || '1280*1280';
+    // Get size parameter - prefer SiliconFlow (Kolors) if configured, otherwise use Wanx
+    const useSiliconFlow = siliconflowService.isConfigured();
+    const size = useSiliconFlow
+      ? PLATFORM_SIZE_MAP_SF[platform] || '1024x1024'
+      : PLATFORM_SIZE_MAP[platform] || '1280*1280';
 
-    // Call Wanx API
+    // Call image generation API
     try {
-      const imageUrlResult = await this.callWanxApi({
-        promptText,
-        size: wanxSize,
-        negativePrompt,
-        imageUrl,
-      });
+      let imageUrlResult: string;
+
+      if (useSiliconFlow) {
+        // Use SiliconFlow Kolors
+        imageUrlResult = await siliconflowService.generateImage({
+          promptText,
+          size,
+          negativePrompt,
+          imageUrl,
+        });
+        console.info(`[ImageService] Generated image using SiliconFlow Kolors (${size})`);
+      } else {
+        // Fall back to Wanx
+        imageUrlResult = await this.callWanxApi({
+          promptText,
+          size,
+          negativePrompt,
+          imageUrl,
+        });
+        console.info(`[ImageService] Generated image using Wanx (${size})`);
+      }
 
       // Update image record with the generated URL
       let finalUrl = imageUrlResult;

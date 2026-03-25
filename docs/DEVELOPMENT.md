@@ -128,12 +128,22 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/prompt_studio
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
 JWT_EXPIRES_IN=7d
 
-# 通义万相图片生成（必须才能测试生成功能）
+# 通义万相图片生成（备选，当SiliconFlow未配置时使用）
 WANX_API_KEY=your-wanx-api-key
 WANX_BASE_URL=https://dashscope.aliyuncs.com/api/v1
 WANX_MODEL=wanx2.1
 WANX_TIMEOUT=60000
 WANX_RETRY_ATTEMPTS=3
+
+# SiliconFlow图片生成（推荐，性价比更高）
+# 获取API Key: https://docs.siliconflow.cn/
+# Kolors模型支持: 1024x1024, 768x1344, 1344x768, 720x1440, 1440x720, 1920x720
+# 支持文生图和图生图模式
+SILICONFLOW_API_KEY=your-siliconflow-api-key
+SILICONFLOW_API_URL=https://api.siliconflow.cn/v1
+SILICONFLOW_MODEL=Kolors
+SILICONFLOW_TIMEOUT=120000
+SILICONFLOW_RETRY_ATTEMPTS=2
 
 # 阿里云OSS（可选，用于存储生成的图片）
 OSS_ACCESS_KEY_ID=your-access-key
@@ -295,7 +305,8 @@ prompt-studio/
 | 模块 | 模型 | 状态 |
 |------|------|------|
 | 提示词搜索 | 待配置 | 🔴 |
-| 图片生成 | 通义万相 Wanx2.1 | 🔴 |
+| 图片生成 | SiliconFlow Kolors (快手) | 🟢 |
+| 图片生成 | 通义万相 Wanx2.1 (备选) | 🟡 |
 
 ### 2.3 数据库设计
 

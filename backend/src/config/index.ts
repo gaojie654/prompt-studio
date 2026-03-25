@@ -56,6 +56,14 @@ export default {
     retryAttempts: parseInt(process.env.WANX_RETRY_ATTEMPTS || '2', 10),
   },
 
+  siliconflow: {
+    apiKey: process.env.SILICONFLOW_API_KEY,
+    baseUrl: process.env.SILICONFLOW_API_URL || 'https://api.siliconflow.cn/v1',
+    model: process.env.SILICONFLOW_MODEL || 'Kolors',
+    timeout: parseInt(process.env.SILICONFLOW_TIMEOUT || '120000', 10),
+    retryAttempts: parseInt(process.env.SILICONFLOW_RETRY_ATTEMPTS || '2', 10),
+  },
+
   wechat: {
     mchId: process.env.WECHAT_MCHID,
     serialNo: process.env.WECHAT_SERIAL_NO,

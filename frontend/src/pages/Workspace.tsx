@@ -370,10 +370,10 @@ export default function Workspace() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                生成中 {Math.round(generationProgress)}%...
+                使用 SiliconFlow (Kolors) 生成中 {Math.round(generationProgress)}%...
               </span>
             ) : (
-              '🎨 AI生成图片'
+              '🎨 使用 SiliconFlow (Kolors) 生成图片'
             )}
           </button>
         </div>
@@ -523,6 +523,7 @@ export default function Workspace() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <h4 className="font-medium text-yellow-800 mb-2">💡 生成技巧</h4>
             <ul className="text-xs md:text-sm text-yellow-700 space-y-1">
+              <li>• 由 SiliconFlow (Kolors) 提供图像生成能力</li>
               <li>• 上传清晰的产品图效果更好</li>
               <li>• 描述越具体，生成效果越符合预期</li>
               <li>• 使用负面提示词可以避免不想要的元素</li>

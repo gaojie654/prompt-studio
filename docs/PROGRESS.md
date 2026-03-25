@@ -10,7 +10,7 @@
 |------|------|--------|
 | M1: 需求确认 + 架构设计 | ✅ 完成 | 100% |
 | M2: MVP核心功能开发 | ✅ 完成 | 100% |
-| M3: 内测 + 反馈优化 | 🔴 进行中 | 85% |
+| M3: 内测 + 反馈优化 | 🔴 进行中 | 90% |
 | M4: 正式上线 | ⏳ 等待中 | 0% |
 
 ---
@@ -111,6 +111,7 @@
 - [x] 管理后台基础框架（Dashboard/UserManagement/OrderManagement/PromptManagement/Statistics/Settings）
 - [x] 管理后台管理员登录页面 + JWT认证
 - [x] 管理后台数据与真实API对接
+- [x] SiliconFlow (Kolors) 图像生成API接入（高性价比，支持文生图和图生图）
 
 ### 📋 内测 Checklist（完整版）
 
@@ -221,11 +222,12 @@
 
 ### 🐛 已知待修复问题
 - [ ] 提示词库需要种子数据（目前空列表）
-- [x] 图片生成API已对接通义万相Wanx（需配置WANX_API_KEY环境变量）
+- [x] 图片生成API已对接SiliconFlow Kolors（高优先级，性价比更高）
+- [x] 图片生成API已对接通义万相Wanx（作为SiliconFlow的备选）
 - [x] 用户余额/会员系统后端已完成
 - [x] 微信/支付宝支付后端已完成（需配置商户号和密钥）
 - [x] 前端支付流程UI（充值/月卡/年卡购买页面）已完成
-- [ ] WANX API Key 需要申请并配置
+- [x] SiliconFlow API Key 已配置（sk-elpf...）
 - [x] **TypeScript编译错误修复**：前后端所有TypeScript编译错误已修复，前后端均可成功build
 
 ---
@@ -310,6 +312,7 @@
 | 2026-03-25 | M3 TypeScript编译错误全面修复：前后端所有类型错误修复，前后端均可成功build，代码已push | Claude Code |
 | 2026-03-25 | 内容审核系统：Prisma Review模型、后端审核服务+路由+Admin UI审核页面 | Subagent |
 | 2026-03-25 | 公告管理系统：Prisma Announcement模型、后端公告服务+路由+Admin UI公告管理页面+前端弹窗展示 | Subagent |
+| 2026-03-25 | SiliconFlow (Kolors) 图像生成API接入：配置、服务创建、图片服务集成、前端UI更新 | Subagent |
 
 ---
 
