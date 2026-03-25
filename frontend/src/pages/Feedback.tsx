@@ -1,13 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import axios from 'axios'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
-
-interface FeedbackData {
-  type: 'bug' | 'suggestion' | 'other'
-  content: string
-  contact?: string
-}
 
 export default function Feedback() {
   const [feedbackType, setFeedbackType] = useState<'bug' | 'suggestion' | 'other'>('suggestion')

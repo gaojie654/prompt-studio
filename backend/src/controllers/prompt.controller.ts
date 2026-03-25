@@ -8,14 +8,18 @@ import { AppError } from '../utils/AppError';
  * List prompts with filtering
  */
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { keyword, category, tags, page, pageSize } = req.query;
+  const keyword = req.query.keyword as string | undefined;
+  const category = req.query.category as string | undefined;
+  const tags = req.query.tags as string | undefined;
+  const page = req.query.page as string | undefined;
+  const pageSize = req.query.pageSize as string | undefined;
 
   const result = await promptService.list({
-    keyword: keyword as string,
-    category: category as string,
-    tags: tags ? (tags as string).split(',') : undefined,
-    page: page ? parseInt(page as string, 10) : 1,
-    pageSize: pageSize ? parseInt(pageSize as string, 10) : 20,
+    keyword,
+    category,
+    tags: tags ? tags.split(',') : undefined,
+    page: page ? parseInt(page, 10) : 1,
+    pageSize: pageSize ? parseInt(pageSize, 10) : 20,
   });
 
   res.json({
@@ -31,15 +35,16 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
  * Search prompts by keyword
  */
 export const search = asyncHandler(async (req: Request, res: Response) => {
-  const { keyword, limit } = req.query;
+  const keyword = req.query.keyword as string | undefined;
+  const limit = req.query.limit as string | undefined;
 
   if (!keyword) {
     throw new AppError('Keyword is required', 400, 'MISSING_KEYWORD');
   }
 
   const prompts = await promptService.search(
-    keyword as string,
-    limit ? parseInt(limit as string, 10) : 10
+    keyword,
+    limit ? parseInt(limit, 10) : 10
   );
 
   res.json({
@@ -53,7 +58,7 @@ export const search = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/prompts/categories
  * Get all categories
  */
-export const getCategories = asyncHandler(async (req: Request, res: Response) => {
+export const getCategories = asyncHandler(async (_req: Request, res: Response) => {
   const categories = await promptService.getCategories();
 
   res.json({
@@ -68,7 +73,7 @@ export const getCategories = asyncHandler(async (req: Request, res: Response) =>
  * Get prompt by ID
  */
 export const getById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const prompt = await promptService.getById(id);
 
   res.json({
@@ -87,7 +92,15 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { title, content, description, category, tags, isPublic, price } = req.body;
+  const { title, content, description, category, tags, isPublic, price } = req.body as {
+    title: string;
+    content: string;
+    description?: string;
+    category?: string;
+    tags?: string[];
+    isPublic?: boolean;
+    price?: number;
+  };
 
   const prompt = await promptService.create({
     title,
@@ -116,8 +129,16 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { id } = req.params;
-  const { title, content, description, category, tags, isPublic, price } = req.body;
+  const id = req.params.id as string;
+  const { title, content, description, category, tags, isPublic, price } = req.body as {
+    title?: string;
+    content?: string;
+    description?: string;
+    category?: string;
+    tags?: string[];
+    isPublic?: boolean;
+    price?: number;
+  };
 
   const prompt = await promptService.update(id, req.user.userId, {
     title,
@@ -145,7 +166,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { id } = req.params;
+  const id = req.params.id as string;
   await promptService.delete(id, req.user.userId);
 
   res.json({

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import axios from 'axios'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -38,7 +37,6 @@ export default function Recharge() {
   const [paying, setPaying] = useState(false)
   const [showQR, setShowQR] = useState(false)
   const [qrCode, setQrCode] = useState<string>('')
-  const [alipayUrl, setAlipayUrl] = useState<string>('')
   const [orderNo, setOrderNo] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PENDING')
   const [polling, setPolling] = useState(false)
@@ -89,7 +87,6 @@ export default function Recharge() {
         startPolling(order.orderNo)
       } else if (paymentMethod === 'ALIPAY') {
         if (payment.paymentUrl) {
-          setAlipayUrl(payment.paymentUrl)
           // Open alipay page
           window.location.href = payment.paymentUrl
           startPolling(order.orderNo)

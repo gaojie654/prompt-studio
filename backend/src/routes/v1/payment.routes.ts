@@ -3,7 +3,7 @@
  * 创建支付订单、查询支付状态
  */
 
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { authenticate } from '../../middleware/auth';
 import { asyncHandler } from '../../utils/AppError';
 import { paymentOrderService, PaymentMethod } from '../../services/payment/order.service';
@@ -22,17 +22,17 @@ const router = Router();
 // ============================================================
 
 // 获取充值套餐列表
-router.get('/packages/recharge', asyncHandler(async (_req, res) => {
+router.get('/packages/recharge', asyncHandler(async (_req: Request, res: Response) => {
   res.json({ packages: RECHARGE_PACKAGES });
 }));
 
 // 获取会员卡列表
-router.get('/packages/membership', asyncHandler(async (_req, res) => {
+router.get('/packages/membership', asyncHandler(async (_req: Request, res: Response) => {
   res.json({ cards: MEMBERSHIP_CARDS });
 }));
 
 // 获取支付配置状态
-router.get('/config', asyncHandler(async (_req, res) => {
+router.get('/config', asyncHandler(async (_req: Request, res: Response) => {
   res.json({
     wechatEnabled: wechatPayService.isConfigured(),
     alipayEnabled: alipayService.isConfigured(),
@@ -48,7 +48,7 @@ router.get('/config', asyncHandler(async (_req, res) => {
 router.get(
   '/balance',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const balance = await balanceService.getBalance(req.user!.userId);
     res.json({ balance });
   })
@@ -58,7 +58,7 @@ router.get(
 router.get(
   '/transactions',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
     const result = await balanceService.getTransactions(req.user!.userId, page, pageSize);
@@ -70,7 +70,7 @@ router.get(
 router.get(
   '/orders',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
     const result = await paymentOrderService.getUserOrders(req.user!.userId, page, pageSize);
@@ -82,12 +82,12 @@ router.get(
 router.get(
   '/orders/:id',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const order = await paymentOrderService.getById(req.params.id as string, req.user!.userId);
     if (!order) {
       return res.status(404).json({ code: 'NOT_FOUND', message: '订单不存在' });
     }
-    res.json({ order });
+    return res.json({ order });
   })
 );
 
@@ -99,7 +99,7 @@ router.get(
 router.post(
   '/recharge',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { packageId, paymentMethod } = req.body as { packageId: string; paymentMethod: string };
 
     if (!packageId || !paymentMethod) {
@@ -135,7 +135,7 @@ router.post(
       return res.status(400).json({ code: 'INVALID_METHOD', message: '不支持的支付方式' });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       order,
       payment: paymentResult,
     });
@@ -150,7 +150,7 @@ router.post(
 router.post(
   '/membership',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { cardId, paymentMethod } = req.body as { cardId: string; paymentMethod: string };
 
     if (!cardId || !paymentMethod) {
@@ -186,7 +186,7 @@ router.post(
       return res.status(400).json({ code: 'INVALID_METHOD', message: '不支持的支付方式' });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       order,
       payment: paymentResult,
     });
@@ -200,14 +200,14 @@ router.post(
 router.post(
   '/orders/:id/cancel',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const order = await paymentOrderService.getById(req.params.id as string, req.user!.userId);
     if (!order) {
       return res.status(404).json({ code: 'NOT_FOUND', message: '订单不存在' });
     }
 
     await paymentOrderService.cancel(order.orderNo, req.user!.userId);
-    res.json({ message: '订单已取消' });
+    return res.json({ message: '订单已取消' });
   })
 );
 
@@ -218,7 +218,7 @@ router.post(
 router.get(
   '/wechat/status/:orderNo',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const orderNo = req.params.orderNo as string;
     const order = await paymentOrderService.getByOrderNo(orderNo);
     if (!order) {
@@ -256,7 +256,7 @@ router.get(
 router.get(
   '/alipay/status/:orderNo',
   authenticate,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const orderNo = req.params.orderNo as string;
     const order = await paymentOrderService.getByOrderNo(orderNo);
     if (!order) {

@@ -96,7 +96,7 @@ const successResponse = (res: Response, data: any, message = 'success') => {
 export const login = [
   validate(loginSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
     const result = await adminService.adminLogin(email, password);
     successResponse(res, result);
   }),
@@ -106,7 +106,7 @@ export const login = [
  * GET /api/v1/admin/stats
  * Get dashboard statistics
  */
-export const getStats = asyncHandler(async (req: Request, res: Response) => {
+export const getStats = asyncHandler(async (_req: Request, res: Response) => {
   const stats = await adminService.getStats();
   successResponse(res, stats);
 });
@@ -118,8 +118,8 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
 export const listUsers = [
   validate(paginationSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { page, limit, search, memberType } = req.query as any;
-    const result = await adminService.listUsers(page, limit, search, memberType);
+    const v = req._validated!.query as { page: number; limit: number; search?: string; memberType?: string };
+    const result = await adminService.listUsers(v.page, v.limit, v.search, v.memberType);
     successResponse(res, result);
   }),
 ];
@@ -131,7 +131,7 @@ export const listUsers = [
 export const toggleUser = [
   validate(toggleUserSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { id } = req._validated!.params as { id: string };
     const result = await adminService.toggleUser(id);
     successResponse(res, result);
   }),
@@ -144,8 +144,10 @@ export const toggleUser = [
 export const listOrders = [
   validate(orderQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { page, limit, status, type, startDate, endDate } = req.query as any;
-    const result = await adminService.listOrders(page, limit, status, type, startDate, endDate);
+    const v = req._validated!.query as {
+      page: number; limit: number; status?: string; type?: string; startDate?: string; endDate?: string
+    };
+    const result = await adminService.listOrders(v.page, v.limit, v.status, v.type, v.startDate, v.endDate);
     successResponse(res, result);
   }),
 ];
@@ -157,8 +159,8 @@ export const listOrders = [
 export const listPrompts = [
   validate(paginationSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { page, limit } = req.query as any;
-    const result = await adminService.listPrompts(page, limit);
+    const v = req._validated!.query as { page: number; limit: number };
+    const result = await adminService.listPrompts(v.page, v.limit);
     successResponse(res, result);
   }),
 ];
@@ -171,7 +173,8 @@ export const createPrompt = [
   validate(createPromptSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const authorId = req.user!.userId;
-    const prompt = await adminService.createPrompt({ ...req.body, authorId });
+    const body = req._validated!.body as Record<string, unknown>;
+    const prompt = await adminService.createPrompt({ ...body, authorId } as Parameters<typeof adminService.createPrompt>[0]);
     successResponse(res, prompt, 'Prompt created successfully');
   }),
 ];
@@ -183,8 +186,9 @@ export const createPrompt = [
 export const updatePrompt = [
   validate(updatePromptSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const prompt = await adminService.updatePrompt(id, req.body);
+    const { id } = req._validated!.params as { id: string };
+    const body = req._validated!.body as Record<string, unknown>;
+    const prompt = await adminService.updatePrompt(id, body as Parameters<typeof adminService.updatePrompt>[1]);
     successResponse(res, prompt, 'Prompt updated successfully');
   }),
 ];
@@ -196,7 +200,7 @@ export const updatePrompt = [
 export const deletePrompt = [
   validate(deletePromptSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { id } = req._validated!.params as { id: string };
     await adminService.deletePrompt(id);
     successResponse(res, null, 'Prompt deleted successfully');
   }),
@@ -209,7 +213,7 @@ export const deletePrompt = [
 export const toggleFeatured = [
   validate(toggleFeaturedSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { id } = req._validated!.params as { id: string };
     const result = await adminService.toggleFeatured(id);
     successResponse(res, result);
   }),
@@ -219,7 +223,7 @@ export const toggleFeatured = [
  * GET /api/v1/admin/settings
  * Get system settings
  */
-export const getSettings = asyncHandler(async (req: Request, res: Response) => {
+export const getSettings = asyncHandler(async (_req: Request, res: Response) => {
   const settings = await adminService.getSettings();
   successResponse(res, settings);
 });
@@ -231,7 +235,8 @@ export const getSettings = asyncHandler(async (req: Request, res: Response) => {
 export const updateSettings = [
   validate(settingsSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const settings = await adminService.updateSettings(req.body);
+    const body = req._validated!.body as Record<string, unknown>;
+    const settings = await adminService.updateSettings(body);
     successResponse(res, settings, 'Settings updated successfully');
   }),
 ];

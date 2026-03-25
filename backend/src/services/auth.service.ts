@@ -109,7 +109,7 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
     try {
       // Verify refresh token
-      const decoded = jwt.verify(refreshToken, config.jwt.secret) as { userId: string };
+      jwt.verify(refreshToken, config.jwt.secret) as { userId: string };
 
       // Find stored refresh token
       const storedToken = await prisma.refreshToken.findUnique({
@@ -166,13 +166,13 @@ export class AuthService {
     const accessToken = jwt.sign(
       { userId, email, role },
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: config.jwt.expiresIn as jwt.SignOptions['expiresIn'] }
     );
 
     const refreshToken = jwt.sign(
       { userId },
       config.jwt.secret,
-      { expiresIn: config.jwt.refreshExpiresIn }
+      { expiresIn: config.jwt.refreshExpiresIn as jwt.SignOptions['expiresIn'] }
     );
 
     return { accessToken, refreshToken };

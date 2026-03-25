@@ -131,7 +131,7 @@ export const adminLogin = async (email: string, password: string): Promise<Admin
   const accessToken = jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
     config.jwt.secret,
-    { expiresIn: config.jwt.expiresIn }
+    { expiresIn: config.jwt.expiresIn as jwt.SignOptions['expiresIn'] }
   );
 
   return {

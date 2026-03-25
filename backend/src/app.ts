@@ -54,7 +54,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -72,7 +72,7 @@ app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/payment', paymentCallbackRoutes);
 
 // 404 handler
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   next(new AppError(`Route ${req.originalUrl} not found`, 404));
 });
 

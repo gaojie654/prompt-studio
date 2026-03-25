@@ -17,13 +17,6 @@ const generateImageSchema = z.object({
   }),
 });
 
-const listImagesSchema = z.object({
-  query: z.object({
-    page: z.string().optional(),
-    pageSize: z.string().optional(),
-  }),
-});
-
 // Public route - get available sizes
 router.get('/platforms/sizes', asyncHandler(getPlatformSizes));
 

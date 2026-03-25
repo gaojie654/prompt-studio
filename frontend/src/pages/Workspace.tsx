@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -37,36 +36,7 @@ interface GeneratedImage {
   createdAt: string
 }
 
-// Skeleton component
-function WorkspaceSkeleton() {
-  return (
-    <div className="max-w-7xl mx-auto animate-pulse">
-      <div className="mb-8">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
-        <div className="h-4 bg-gray-200 rounded w-72"></div>
-      </div>
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="space-y-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
-              <div className="h-12 bg-gray-200 rounded-lg"></div>
-            </div>
-          ))}
-        </div>
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
-            <div className="aspect-square bg-gray-200 rounded-xl"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function Workspace() {
-  const navigate = useNavigate()
   const [selectedPlatform, setSelectedPlatform] = useState(PLATFORMS[0].key)
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [customPrompt, setCustomPrompt] = useState('')

@@ -301,7 +301,7 @@ export class ImageService {
         throw new AppError(`Wanx API error: HTTP ${response.status}`, response.status, 'WANX_HTTP_ERROR');
       }
 
-      const data: WanxResponse = await response.json();
+      const data = await response.json() as WanxResponse;
 
       // Parse response
       if (!data.output?.choices?.[0]?.message?.content) {

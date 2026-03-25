@@ -10,8 +10,8 @@ export const comparePassword = async (password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash);
 };
 
-export const generateToken = (payload: object, expiresIn: string = config.jwt.expiresIn): string => {
-  return jwt.sign(payload, config.jwt.secret, { expiresIn });
+export const generateToken = (payload: object, expiresIn: string | number = config.jwt.expiresIn): string => {
+  return jwt.sign(payload, config.jwt.secret, { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] });
 };
 
 export const verifyToken = (token: string) => {

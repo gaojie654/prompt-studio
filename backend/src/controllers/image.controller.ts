@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { imageService, PLATFORM_SIZES, PlatformSize } from '../services/image.service';
+import { imageService, PlatformSize } from '../services/image.service';
 import { asyncHandler } from '../utils/AppError';
 import { AppError } from '../utils/AppError';
 
@@ -12,7 +12,13 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { platform, promptId, imageUrl, prompt, negativePrompt } = req.body;
+  const { platform, promptId, imageUrl, prompt, negativePrompt } = req.body as {
+    platform: PlatformSize;
+    promptId?: string;
+    imageUrl?: string;
+    prompt?: string;
+    negativePrompt?: string;
+  };
 
   if (!platform) {
     throw new AppError('Platform is required', 400, 'MISSING_PLATFORM');
@@ -43,12 +49,13 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { page, pageSize } = req.query;
+  const page = req.query.page as string | undefined;
+  const pageSize = req.query.pageSize as string | undefined;
 
   const result = await imageService.getUserImages(
     req.user.userId,
-    page ? parseInt(page as string, 10) : 1,
-    pageSize ? parseInt(pageSize as string, 10) : 20
+    page ? parseInt(page, 10) : 1,
+    pageSize ? parseInt(pageSize, 10) : 20
   );
 
   res.json({
@@ -68,7 +75,7 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { id } = req.params;
+  const id = req.params.id as string;
   const image = await imageService.getById(id, req.user.userId);
 
   res.json({
@@ -87,7 +94,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { id } = req.params;
+  const id = req.params.id as string;
   await imageService.delete(id, req.user.userId);
 
   res.json({
@@ -100,7 +107,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
  * GET /api/images/platforms/sizes
  * Get available platform sizes
  */
-export const getPlatformSizes = asyncHandler(async (req: Request, res: Response) => {
+export const getPlatformSizes = asyncHandler(async (_req: Request, res: Response) => {
   const sizes = imageService.getPlatformSizes();
 
   res.json({
