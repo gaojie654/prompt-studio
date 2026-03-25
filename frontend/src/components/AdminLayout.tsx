@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 
 const menuItems = [
@@ -12,8 +13,16 @@ const menuItems = [
 export default function AdminLayout() {
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) {
+      navigate('/admin/login')
+    }
+  }, [navigate])
+
   const handleLogout = () => {
-    navigate('/')
+    localStorage.removeItem('adminToken')
+    navigate('/admin/login')
   }
 
   return (

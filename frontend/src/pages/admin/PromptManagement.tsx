@@ -1,89 +1,153 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 interface Prompt {
   id: string
   title: string
-  category: '电商' | '社交' | '媒体'
-  usageCount: number
-  featured: boolean
+  content: string
+  description: string | null
+  category: string | null
+  tags: string[]
+  isPublic: boolean
+  isFeatured: boolean
+  price: number
+  viewCount: number
+  likeCount: number
+  useCount: number
+  authorEmail: string
   createdAt: string
 }
 
-const mockPrompts: Prompt[] = [
-  { id: '1', title: '商品主图描述生成器', category: '电商', usageCount: 15230, featured: true, createdAt: '2026-03-01' },
-  { id: '2', title: '小红书爆款文案', category: '社交', usageCount: 12350, featured: true, createdAt: '2026-03-05' },
-  { id: '3', title: '抖音短视频脚本', category: '媒体', usageCount: 9870, featured: false, createdAt: '2026-03-10' },
-  { id: '4', title: '淘宝详情页优化', category: '电商', usageCount: 8540, featured: false, createdAt: '2026-03-12' },
-  { id: '5', title: '朋友圈营销文案', category: '社交', usageCount: 7680, featured: false, createdAt: '2026-03-15' },
-  { id: '6', title: '公众号选题助手', category: '媒体', usageCount: 6230, featured: true, createdAt: '2026-03-18' },
-  { id: '7', title: '电商评价回复', category: '电商', usageCount: 5120, featured: false, createdAt: '2026-03-20' },
-  { id: '8', title: '微商朋友圈文案', category: '社交', usageCount: 4890, featured: false, createdAt: '2026-03-22' },
-]
-
-const categories = ['全部', '电商', '社交', '媒体']
+const categories = ['全部', 'ecommerce', 'social', 'media']
 
 export default function PromptManagement() {
-  const [prompts, setPrompts] = useState(mockPrompts)
+  const [prompts, setPrompts] = useState<Prompt[]>([])
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('全部')
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({ title: '', category: '电商' as Prompt['category'] })
-  const pageSize = 5
+  const [formData, setFormData] = useState({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
+  const pageSize = 10
 
-  const filteredPrompts = prompts.filter((prompt) => {
-    const matchSearch = prompt.title.includes(search)
-    const matchCategory = categoryFilter === '全部' || prompt.category === categoryFilter
-    return matchSearch && matchCategory
-  })
+  const fetchPrompts = async () => {
+    setLoading(true)
+    try {
+      const token = localStorage.getItem('adminToken')
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(pageSize),
+      })
+      if (search) params.append('search', search)
+      if (categoryFilter !== '全部') params.append('category', categoryFilter)
 
-  const totalPages = Math.ceil(filteredPrompts.length / pageSize)
-  const paginatedPrompts = filteredPrompts.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
-
-  const handleSave = () => {
-    if (!formData.title.trim()) return
-    if (editingPrompt) {
-      setPrompts((prev) =>
-        prev.map((p) =>
-          p.id === editingPrompt.id ? { ...p, title: formData.title, category: formData.category } : p
-        )
-      )
-    } else {
-      const newPrompt: Prompt = {
-        id: String(Date.now()),
-        title: formData.title,
-        category: formData.category,
-        usageCount: 0,
-        featured: false,
-        createdAt: new Date().toISOString().split('T')[0],
-      }
-      setPrompts((prev) => [newPrompt, ...prev])
+      const response = await axios.get(`${API_BASE}/v1/admin/prompts?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = response.data.data
+      setPrompts(data.prompts)
+      setTotal(data.pagination.total)
+      setTotalPages(data.pagination.totalPages)
+    } catch (err) {
+      console.error('Failed to fetch prompts:', err)
+    } finally {
+      setLoading(false)
     }
-    setIsModalOpen(false)
-    setEditingPrompt(null)
-    setFormData({ title: '', category: '电商' })
+  }
+
+  useEffect(() => {
+    fetchPrompts()
+  }, [currentPage, categoryFilter])
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      setCurrentPage(1)
+      fetchPrompts()
+    }, 300)
+    return () => clearTimeout(debounce)
+  }, [search])
+
+  const handleSave = async () => {
+    if (!formData.title.trim() || !formData.content.trim()) return
+    const token = localStorage.getItem('adminToken')
+    const payload = {
+      ...formData,
+      tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+    }
+
+    try {
+      if (editingPrompt) {
+        await axios.put(`${API_BASE}/v1/admin/prompts/${editingPrompt.id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      } else {
+        await axios.post(`${API_BASE}/v1/admin/prompts`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      }
+      setIsModalOpen(false)
+      setEditingPrompt(null)
+      setFormData({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
+      fetchPrompts()
+    } catch (err) {
+      console.error('Failed to save prompt:', err)
+    }
   }
 
   const handleEdit = (prompt: Prompt) => {
     setEditingPrompt(prompt)
-    setFormData({ title: prompt.title, category: prompt.category })
+    setFormData({
+      title: prompt.title,
+      content: prompt.content,
+      description: prompt.description || '',
+      category: prompt.category || 'ecommerce',
+      tags: prompt.tags?.join(', ') || '',
+      isPublic: prompt.isPublic,
+      price: prompt.price,
+    })
     setIsModalOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    setPrompts((prev) => prev.filter((p) => p.id !== id))
-    setDeleteConfirmId(null)
+  const handleDelete = async (id: string) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      await axios.delete(`${API_BASE}/v1/admin/prompts/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setDeleteConfirmId(null)
+      fetchPrompts()
+    } catch (err) {
+      console.error('Failed to delete prompt:', err)
+    }
   }
 
-  const toggleFeatured = (id: string) => {
-    setPrompts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, featured: !p.featured } : p))
-    )
+  const toggleFeatured = async (id: string) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      await axios.put(`${API_BASE}/v1/admin/prompts/${id}/featured`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setPrompts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, isFeatured: !p.isFeatured } : p))
+      )
+    } catch (err) {
+      console.error('Failed to toggle featured:', err)
+    }
+  }
+
+  const categoryLabel = (cat: string | null) => {
+    switch (cat) {
+      case 'ecommerce': return '电商'
+      case 'social': return '社交'
+      case 'media': return '媒体'
+      default: return cat || '-'
+    }
   }
 
   return (
@@ -91,15 +155,12 @@ export default function PromptManagement() {
       <h2 className="text-xl font-semibold text-gray-800">提示词管理</h2>
 
       {/* 搜索和操作 */}
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center flex-wrap">
         <input
           type="text"
           placeholder="搜索提示词标题"
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setCurrentPage(1)
-          }}
+          onChange={(e) => setSearch(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <select
@@ -112,14 +173,14 @@ export default function PromptManagement() {
         >
           {categories.map((c) => (
             <option key={c} value={c}>
-              {c === '全部' ? '全部分类' : c}
+              {c === '全部' ? '全部分类' : categoryLabel(c)}
             </option>
           ))}
         </select>
         <button
           onClick={() => {
             setEditingPrompt(null)
-            setFormData({ title: '', category: '电商' })
+            setFormData({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
             setIsModalOpen(true)
           }}
           className="ml-auto px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
@@ -133,7 +194,6 @@ export default function PromptManagement() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-gray-600 font-medium">ID</th>
               <th className="px-4 py-3 text-left text-gray-600 font-medium">标题</th>
               <th className="px-4 py-3 text-left text-gray-600 font-medium">分类</th>
               <th className="px-4 py-3 text-left text-gray-600 font-medium">使用次数</th>
@@ -143,74 +203,85 @@ export default function PromptManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {paginatedPrompts.map((prompt) => (
-              <tr key={prompt.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-gray-500">{prompt.id}</td>
-                <td className="px-4 py-3 text-gray-900 font-medium">{prompt.title}</td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                    {prompt.category}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-900">{prompt.usageCount.toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  {prompt.featured ? (
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">是</span>
-                  ) : (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">否</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-gray-500">{prompt.createdAt}</td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => handleEdit(prompt)}
-                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 mr-1 transition-colors"
-                  >
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => toggleFeatured(prompt.id)}
-                    className={`px-2 py-1 rounded text-xs mr-1 transition-colors ${
-                      prompt.featured
-                        ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                        : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                    }`}
-                  >
-                    {prompt.featured ? '取消精选' : '设为精选'}
-                  </button>
-                  {deleteConfirmId === prompt.id ? (
-                    <span className="inline-flex items-center gap-1">
-                      <button
-                        onClick={() => handleDelete(prompt.id)}
-                        className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
-                      >
-                        确认
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
-                      >
-                        取消
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteConfirmId(prompt.id)}
-                      className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200 transition-colors"
-                    >
-                      删除
-                    </button>
-                  )}
-                </td>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">加载中...</td>
               </tr>
-            ))}
+            ) : prompts.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">暂无提示词</td>
+              </tr>
+            ) : (
+              prompts.map((prompt) => (
+                <tr key={prompt.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-gray-900 font-medium">{prompt.title}</td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                      {categoryLabel(prompt.category)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-900">{prompt.useCount.toLocaleString()}</td>
+                  <td className="px-4 py-3">
+                    {prompt.isFeatured ? (
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">是</span>
+                    ) : (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">否</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {new Date(prompt.createdAt).toLocaleDateString('zh-CN')}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleEdit(prompt)}
+                      className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 mr-1 transition-colors"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => toggleFeatured(prompt.id)}
+                      className={`px-2 py-1 rounded text-xs mr-1 transition-colors ${
+                        prompt.isFeatured
+                          ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                      }`}
+                    >
+                      {prompt.isFeatured ? '取消精选' : '设为精选'}
+                    </button>
+                    {deleteConfirmId === prompt.id ? (
+                      <span className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => handleDelete(prompt.id)}
+                          className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                        >
+                          确认
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
+                        >
+                          取消
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirmId(prompt.id)}
+                        className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200 transition-colors"
+                      >
+                        删除
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {/* 分页 */}
       <div className="flex justify-between items-center">
-        <span className="text-sm text-gray-500">共 {filteredPrompts.length} 条记录</span>
+        <span className="text-sm text-gray-500">共 {total} 条记录</span>
         <div className="flex gap-2">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -234,35 +305,74 @@ export default function PromptManagement() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-96 p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-auto py-8">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 mx-4">
             <h3 className="text-lg font-semibold mb-4">
               {editingPrompt ? '编辑提示词' : '添加提示词'}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">标题</label>
+                <label className="block text-sm text-gray-600 mb-1">标题 *</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="请输入提示词标题"
+                  placeholder="提示词标题"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">分类</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, category: e.target.value as Prompt['category'] }))
-                  }
+                <label className="block text-sm text-gray-600 mb-1">内容 *</label>
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="电商">电商</option>
-                  <option value="社交">社交</option>
-                  <option value="媒体">媒体</option>
-                </select>
+                  rows={4}
+                  placeholder="提示词内容"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">描述</label>
+                <input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="简短描述"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">分类</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="ecommerce">电商</option>
+                    <option value="social">社交</option>
+                    <option value="media">媒体</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">标签（逗号分隔）</label>
+                  <input
+                    type="text"
+                    value={formData.tags}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="标签1, 标签2"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  checked={formData.isPublic}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, isPublic: e.target.checked }))}
+                />
+                <label htmlFor="isPublic" className="text-sm text-gray-600">公开可见</label>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

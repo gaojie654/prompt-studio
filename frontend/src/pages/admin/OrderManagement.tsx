@@ -1,60 +1,91 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 interface Order {
   id: string
   orderNo: string
-  userPhone: string
-  type: '充值' | '会员'
+  userId: string
+  userEmail: string
+  type: string
   amount: number
-  payMethod: '微信' | '支付宝'
-  status: '待支付' | '已支付' | '已过期'
+  paymentMethod: string
+  status: string
+  paidAt: string | null
   createdAt: string
 }
 
-const mockOrders: Order[] = [
-  { id: '1', orderNo: 'PS20260325001', userPhone: '138****1234', type: '会员', amount: 299, payMethod: '微信', status: '已支付', createdAt: '2026-03-25 10:23' },
-  { id: '2', orderNo: 'PS20260325002', userPhone: '139****5678', type: '充值', amount: 100, payMethod: '支付宝', status: '待支付', createdAt: '2026-03-25 11:05' },
-  { id: '3', orderNo: 'PS20260324001', userPhone: '137****9012', type: '会员', amount: 299, payMethod: '微信', status: '已支付', createdAt: '2026-03-24 09:30' },
-  { id: '4', orderNo: 'PS20260324002', userPhone: '136****3456', type: '充值', amount: 500, payMethod: '支付宝', status: '已过期', createdAt: '2026-03-24 14:20' },
-  { id: '5', orderNo: 'PS20260323001', userPhone: '135****7890', type: '会员', amount: 2999, payMethod: '微信', status: '已支付', createdAt: '2026-03-23 16:45' },
-  { id: '6', orderNo: 'PS20260323002', userPhone: '134****2345', type: '充值', amount: 200, payMethod: '支付宝', status: '已支付', createdAt: '2026-03-23 18:10' },
-  { id: '7', orderNo: 'PS20260322001', userPhone: '133****6789', type: '会员', amount: 299, payMethod: '微信', status: '已支付', createdAt: '2026-03-22 08:00' },
-  { id: '8', orderNo: 'PS20260322002', userPhone: '132****0123', type: '充值', amount: 1000, payMethod: '支付宝', status: '已支付', createdAt: '2026-03-22 20:30' },
-]
-
-const statuses = ['全部', '待支付', '已支付', '已过期']
+const statuses = ['全部', '待支付', '已支付', '已过期', '已退款']
 const types = ['全部', '充值', '会员']
 
 export default function OrderManagement() {
-  const [orders] = useState(mockOrders)
+  const [orders, setOrders] = useState<Order[]>([])
   const [statusFilter, setStatusFilter] = useState('全部')
   const [typeFilter, setTypeFilter] = useState('全部')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 5
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const pageSize = 10
 
-  const filteredOrders = orders.filter((order) => {
-    const matchStatus = statusFilter === '全部' || order.status === statusFilter
-    const matchType = typeFilter === '全部' || order.type === typeFilter
-    return matchStatus && matchType
-  })
+  const fetchOrders = async () => {
+    setLoading(true)
+    try {
+      const token = localStorage.getItem('adminToken')
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: String(pageSize),
+      })
+      if (statusFilter !== '全部') params.append('status', statusFilter === '待支付' ? 'PENDING' : statusFilter === '已支付' ? 'PAID' : statusFilter === '已过期' ? 'EXPIRED' : statusFilter === '已退款' ? 'REFUNDED' : '')
+      if (typeFilter !== '全部') params.append('type', typeFilter === '充值' ? 'RECHARGE' : 'MEMBERSHIP')
+      if (dateRange.start) params.append('startDate', dateRange.start)
+      if (dateRange.end) params.append('endDate', dateRange.end)
 
-  const totalPages = Math.ceil(filteredOrders.length / pageSize)
-  const paginatedOrders = filteredOrders.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
+      const response = await axios.get(`${API_BASE}/v1/admin/orders?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = response.data.data
+      setOrders(data.orders)
+      setTotal(data.pagination.total)
+      setTotalPages(data.pagination.totalPages)
+    } catch (err) {
+      console.error('Failed to fetch orders:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchOrders()
+  }, [currentPage, statusFilter, typeFilter, dateRange.start, dateRange.end])
 
   const statusColor = (status: string) => {
     switch (status) {
-      case '已支付':
-        return 'bg-green-100 text-green-700'
-      case '待支付':
-        return 'bg-yellow-100 text-yellow-700'
-      case '已过期':
-        return 'bg-red-100 text-red-700'
-      default:
-        return 'bg-gray-100 text-gray-600'
+      case 'PAID': return 'bg-green-100 text-green-700'
+      case 'PENDING': return 'bg-yellow-100 text-yellow-700'
+      case 'EXPIRED': return 'bg-red-100 text-red-700'
+      case 'REFUNDED': return 'bg-gray-100 text-gray-600'
+      default: return 'bg-gray-100 text-gray-600'
+    }
+  }
+
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case 'PAID': return '已支付'
+      case 'PENDING': return '待支付'
+      case 'EXPIRED': return '已过期'
+      case 'REFUNDED': return '已退款'
+      default: return status
+    }
+  }
+
+  const typeLabel = (type: string) => {
+    switch (type) {
+      case 'RECHARGE': return '充值'
+      case 'MEMBERSHIP': return '会员'
+      default: return type
     }
   }
 
@@ -95,14 +126,20 @@ export default function OrderManagement() {
         <input
           type="date"
           value={dateRange.start}
-          onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
+          onChange={(e) => {
+            setDateRange((prev) => ({ ...prev, start: e.target.value }))
+            setCurrentPage(1)
+          }}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <span className="text-gray-400">至</span>
         <input
           type="date"
           value={dateRange.end}
-          onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
+          onChange={(e) => {
+            setDateRange((prev) => ({ ...prev, end: e.target.value }))
+            setCurrentPage(1)
+          }}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -122,28 +159,40 @@ export default function OrderManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {paginatedOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-blue-600 font-mono text-xs">{order.orderNo}</td>
-                <td className="px-4 py-3 text-gray-900">{order.userPhone}</td>
-                <td className="px-4 py-3 text-gray-900">{order.type}</td>
-                <td className="px-4 py-3 text-gray-900 font-medium">¥{order.amount}</td>
-                <td className="px-4 py-3 text-gray-900">{order.payMethod}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-500">{order.createdAt}</td>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">加载中...</td>
               </tr>
-            ))}
+            ) : orders.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">暂无订单</td>
+              </tr>
+            ) : (
+              orders.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-blue-600 font-mono text-xs">{order.orderNo || order.id.slice(0, 12)}</td>
+                  <td className="px-4 py-3 text-gray-900">{order.userEmail}</td>
+                  <td className="px-4 py-3 text-gray-900">{typeLabel(order.type)}</td>
+                  <td className="px-4 py-3 text-gray-900 font-medium">¥{Number(order.amount)}</td>
+                  <td className="px-4 py-3 text-gray-900">{order.paymentMethod}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor(order.status)}`}>
+                      {statusLabel(order.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {new Date(order.createdAt).toLocaleString('zh-CN')}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {/* 分页 */}
       <div className="flex justify-between items-center">
-        <span className="text-sm text-gray-500">共 {filteredOrders.length} 条记录</span>
+        <span className="text-sm text-gray-500">共 {total} 条记录</span>
         <div className="flex gap-2">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}

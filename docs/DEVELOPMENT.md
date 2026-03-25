@@ -1,6 +1,6 @@
 # 📖 Prompt Studio 开发指南
 
-> 文档版本: v1.0 | 更新日期: 2026-03-25 | 负责人: 虾宝1号
+> 文档版本: v1.1 | 更新日期: 2026-03-25 | 负责人: 虾宝1号
 
 ---
 
@@ -32,6 +32,205 @@
 
 ```
 https://github.com/gaojie654/prompt-studio
+```
+
+---
+
+## 一、本地开发指南
+
+### 1.1 环境要求
+
+| 软件 | 版本要求 | 备注 |
+|------|----------|------|
+| Node.js | 20.x+ | 后端运行时 |
+| pnpm / npm | 最新版 | 包管理器 |
+| PostgreSQL | 15.x | 主数据库 |
+| Redis | 7.x | 缓存（可选） |
+| Git | 最新版 | 版本控制 |
+
+### 1.2 快速启动
+
+#### 1. 克隆代码
+```bash
+git clone https://github.com/gaojie654/prompt-studio.git
+cd prompt-studio
+```
+
+#### 2. 后端启动
+
+```bash
+cd backend
+
+# 安装依赖
+pnpm install
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env，填写必要的配置（见 1.3 环境变量说明）
+
+# 数据库迁移
+pnpm db:migrate
+
+# 数据库种子（可选）
+pnpm db:seed
+
+# 启动开发服务器
+pnpm dev
+```
+
+后端服务将运行在 `http://localhost:3000`
+
+#### 3. 前端启动
+
+```bash
+cd frontend
+
+# 安装依赖
+pnpm install
+
+# 配置环境变量
+cp .env.example .env.local
+# 编辑 .env.local
+
+# 启动开发服务器
+pnpm dev
+```
+
+前端服务将运行在 `http://localhost:5173`
+
+#### 4. Docker 启动（推荐）
+
+```bash
+# 一键启动所有服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止
+docker-compose down
+```
+
+### 1.3 环境变量说明
+
+#### backend/.env
+
+```env
+# 应用配置（必须）
+NODE_ENV=development
+PORT=3000
+BASE_URL=http://localhost:3000
+
+# 数据库（必须）
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/prompt_studio
+
+# JWT（必须）
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=7d
+
+# 通义万相图片生成（必须才能测试生成功能）
+WANX_API_KEY=your-wanx-api-key
+WANX_BASE_URL=https://dashscope.aliyuncs.com/api/v1
+WANX_MODEL=wanx2.1
+WANX_TIMEOUT=60000
+WANX_RETRY_ATTEMPTS=3
+
+# 阿里云OSS（可选，用于存储生成的图片）
+OSS_ACCESS_KEY_ID=your-access-key
+OSS_ACCESS_KEY_SECRET=your-secret-key
+OSS_BUCKET=prompt-studio
+OSS_REGION=oss-cn-hangzhou
+
+# 微信支付（可选，接入支付功能时需要）
+WECHAT_APP_ID=your-app-id
+WECHAT_MCH_ID=your-mch-id
+WECHAT_API_KEY=your-api-key
+WECHAT_CERT_PATH=/path/to/cert.pem
+
+# 支付宝（可选，接入支付功能时需要）
+ALIPAY_APP_ID=your-app-id
+ALIPAY_PRIVATE_KEY=your-private-key
+ALIPAY_PUBLIC_KEY=alipay-public-key
+```
+
+#### frontend/.env.local
+
+```env
+VITE_API_BASE_URL=http://localhost:3000/api/v1
+VITE_APP_NAME=Prompt Studio
+```
+
+### 1.4 创建管理员账号
+
+通过数据库直接创建：
+
+```sql
+-- 创建一个管理员用户
+INSERT INTO users (email, password, role, "isActive", "createdAt", "updatedAt")
+VALUES (
+  'admin@promptstudio.com',
+  -- bcrypt hash of 'admin123' (使用 bcryptjs 生成)
+  '$2a$10$XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+  'ADMIN',
+  true,
+  NOW(),
+  NOW()
+);
+```
+
+或通过 seed 文件：
+```bash
+cd backend && pnpm db:seed
+```
+
+### 1.5 常用命令
+
+```bash
+# 后端
+cd backend
+pnpm dev          # 开发模式启动
+pnpm build        # 生产构建
+pnpm db:migrate   # 运行数据库迁移
+pnpm db:studio    # Prisma 数据库可视化
+pnpm lint         # 代码检查
+pnpm test         # 运行测试
+
+# 前端
+cd frontend
+pnpm dev          # 开发模式启动
+pnpm build        # 生产构建
+pnpm preview      # 预览生产构建
+pnpm lint         # 代码检查
+```
+
+### 1.6 项目结构
+
+```
+prompt-studio/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/    # 路由控制器
+│   │   ├── middleware/      # 中间件（认证、权限、错误处理）
+│   │   ├── routes/          # 路由定义
+│   │   ├── services/         # 业务逻辑
+│   │   ├── utils/            # 工具函数
+│   │   └── config/           # 配置文件
+│   ├── prisma/
+│   │   ├── schema.prisma     # 数据库Schema
+│   │   └── seed.ts           # 种子数据
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── api/              # API 请求封装
+│   │   ├── components/       # 通用组件
+│   │   ├── hooks/             # 自定义 Hooks
+│   │   ├── pages/             # 页面组件
+│   │   │   └── admin/         # 管理后台页面
+│   │   ├── stores/            # 状态管理
+│   │   └── utils/             # 工具函数
+│   └── package.json
+├── docs/                     # 文档
+└── docker-compose.yml        # Docker 配置
 ```
 
 ---
