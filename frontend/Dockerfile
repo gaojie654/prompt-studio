@@ -6,20 +6,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
-COPY package*.json pnpm-lock.yaml ./
+COPY package*.json ./
 
 # Install dependencies
-RUN pnpm install
+RUN npm ci
 
 # Copy source code
 COPY . .
 
 # Build frontend
-RUN pnpm run build
+RUN npm run build
 
 # ============================================
 # Production stage - Nginx
