@@ -83,4 +83,13 @@ app.use((req, _res, next) => {
 // Global error handler
 app.use(errorHandler);
 
+// Start server only when not being imported for testing
+if (require.main === module) {
+  const port = config.port;
+  app.listen(port, () => {
+    console.info(`🚀 Server running at http://localhost:${port}`);
+    console.info(`📖 API docs at http://localhost:${port}/api`);
+  });
+}
+
 export default app;

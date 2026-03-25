@@ -202,7 +202,7 @@ enum ReviewStatus {
 
 model Review {
   id           String       @id @default(cuid())
-  imageId      String
+  imageId      String      @unique
   image        Image        @relation(fields: [imageId], references: [id], onDelete: Cascade)
   reviewerId   String?      // 审核人ID（管理员）
   status       ReviewStatus @default(PENDING)

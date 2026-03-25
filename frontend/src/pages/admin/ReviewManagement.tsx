@@ -116,7 +116,7 @@ export default function ReviewManagement() {
 
   const handleReject = async () => {
     if (!rejectModal.reason.trim()) {
-      alert('请填写拒绝原�?)
+      alert('请填写拒绝原因')
       return
     }
     try {
@@ -138,11 +138,11 @@ export default function ReviewManagement() {
   const getStatusBadge = (status: Review['status']) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-700">待审�?/span>
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-700">待审核</span>
       case 'PASSED':
         return <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">已通过</span>
       case 'REJECTED':
-        return <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">已拒�?/span>
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">已拒绝</span>
     }
   }
 
@@ -154,7 +154,7 @@ export default function ReviewManagement() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">待审�?/div>
+            <div className="text-sm text-gray-500">待审核</div>
             <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
             <div className="text-xs text-gray-400">今日+{stats.todayPending}</div>
           </div>
@@ -164,7 +164,7 @@ export default function ReviewManagement() {
             <div className="text-xs text-gray-400">今日+{stats.todayPassed}</div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">已拒�?/div>
+            <div className="text-sm text-gray-500">已拒绝</div>
             <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
             <div className="text-xs text-gray-400">今日+{stats.todayRejected}</div>
           </div>
@@ -187,7 +187,7 @@ export default function ReviewManagement() {
                 : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
-            {status === 'ALL' ? '全部' : status === 'PENDING' ? '待审�? : status === 'PASSED' ? '已通过' : '已拒�?}
+            {status === 'ALL' ? '全部' : status === 'PENDING' ? '待审核' : status === 'PASSED' ? '已通过' : '已拒绝'}
           </button>
         ))}
       </div>
@@ -195,7 +195,7 @@ export default function ReviewManagement() {
       {/* Image Grid */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">加载�?..</div>
+          <div className="p-8 text-center text-gray-400">加载中...</div>
         ) : reviews.length === 0 ? (
           <div className="p-8 text-center text-gray-400">暂无数据</div>
         ) : (
@@ -269,14 +269,14 @@ export default function ReviewManagement() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">�?{total} 条记�?/span>
+          <span className="text-sm text-gray-500">共{total}条记录</span>
           <div className="flex gap-2">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              上一�?            </button>
+              上页�?            </button>
             <span className="px-3 py-1 text-sm">
               {currentPage} / {totalPages}
             </span>
@@ -285,7 +285,8 @@ export default function ReviewManagement() {
               disabled={currentPage === totalPages}
               className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              下一�?            </button>
+              下页
+            </button>
           </div>
         </div>
       )}
@@ -317,11 +318,11 @@ export default function ReviewManagement() {
       {rejectModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">拒绝审核</h3>
+            <h3 className="text-lg font-semibold mb-4">拒绝原因</h3>
             <textarea
               value={rejectModal.reason}
               onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
-              placeholder="请输入拒绝原�?.."
+              placeholder="请输入拒绝原因..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
               rows={4}
             />

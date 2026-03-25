@@ -35,7 +35,6 @@ export default function Layout() {
       const announcements = response.data.data as Announcement[]
       const popup = announcements.find((a) => a.isPopup)
       if (popup) {
-        // Check if already dismissed
         const dismissed = localStorage.getItem(`announcement_dismissed_${popup.id}`)
         if (!dismissed) {
           setPopupAnnouncement(popup)
@@ -102,7 +101,8 @@ export default function Layout() {
                 to="/workspace"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
               >
-                工作�?              </Link>
+                工作台
+              </Link>
               <Link
                 to="/prompts"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
@@ -113,7 +113,8 @@ export default function Layout() {
                 to="/recharge"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
               >
-                充�?              </Link>
+                充值
+              </Link>
               <Link
                 to="/membership"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
@@ -150,7 +151,8 @@ export default function Layout() {
                         onClick={handleLogout}
                         className="text-sm text-gray-500 hover:text-red-600 transition-colors"
                       >
-                        退�?                      </button>
+                        退出登录
+                      </button>
                     </div>
                   </div>
                 </>
@@ -199,33 +201,35 @@ export default function Layout() {
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
-                🎨 工作�?              </Link>
+                工作台
+              </Link>
               <Link
                 to="/prompts"
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
-                📝 提示词库
+                提示词库
               </Link>
               <Link
                 to="/recharge"
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
-                💰 充�?              </Link>
+                充值
+              </Link>
               <Link
                 to="/membership"
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
-                👑 会员
+                会员
               </Link>
               <Link
                 to="/feedback"
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
-                💬 意见反馈
+                意见反馈
               </Link>
               {isLoggedIn ? (
                 <>
@@ -234,7 +238,7 @@ export default function Layout() {
                     className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                     onClick={() => setShowMobileMenu(false)}
                   >
-                    👤 个人中心
+                    个人中心
                   </Link>
                   <div className="pt-2 mt-2 border-t">
                     <div className="flex items-center gap-3 px-3 py-2">
@@ -255,7 +259,8 @@ export default function Layout() {
                       }}
                       className="block w-full text-left px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg"
                     >
-                      🚪 退出登�?                    </button>
+                      退出登录
+                    </button>
                   </div>
                 </>
               ) : (
@@ -295,9 +300,9 @@ export default function Layout() {
               <div className="text-sm">AI驱动的营销图片生成工具</div>
             </div>
             <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
-              <Link to="/workspace" className="hover:text-white transition-colors">工作�?/Link>
+              <Link to="/workspace" className="hover:text-white transition-colors">工作台</Link>
               <Link to="/prompts" className="hover:text-white transition-colors">提示词库</Link>
-              <Link to="/recharge" className="hover:text-white transition-colors">充�?/Link>
+              <Link to="/recharge" className="hover:text-white transition-colors">充值</Link>
               <Link to="/membership" className="hover:text-white transition-colors">会员</Link>
               <Link to="/feedback" className="hover:text-white transition-colors">意见反馈</Link>
               <Link to="/profile" className="hover:text-white transition-colors">个人中心</Link>
@@ -341,5 +346,3 @@ export default function Layout() {
     </div>
   )
 }
-
-
