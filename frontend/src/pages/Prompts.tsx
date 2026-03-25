@@ -110,7 +110,6 @@ export default function Prompts() {
         setCategoryStats(stats)
       } catch (err: any) {
         setError('获取提示词失败，请重试')
-        console.error(err)
       } finally {
         setLoading(false)
       }

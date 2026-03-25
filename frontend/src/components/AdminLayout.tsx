@@ -6,6 +6,8 @@ const menuItems = [
   { path: '/admin/users', label: '用户管理', icon: '👥' },
   { path: '/admin/orders', label: '订单管理', icon: '💳' },
   { path: '/admin/prompts', label: '提示词管理', icon: '📝' },
+  { path: '/admin/reviews', label: '内容审核', icon: '🔍' },
+  { path: '/admin/announcements', label: '公告管理', icon: '📢' },
   { path: '/admin/statistics', label: '数据统计', icon: '📈' },
   { path: '/admin/settings', label: '系统设置', icon: '⚙️' },
 ]

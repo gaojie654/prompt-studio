@@ -79,7 +79,6 @@ export default function Profile() {
         return
       }
       setError('获取数据失败，请刷新页面重试')
-      console.error(err)
     } finally {
       setLoading(false)
     }

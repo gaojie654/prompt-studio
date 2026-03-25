@@ -44,7 +44,7 @@ export default function UserManagement() {
       setTotal(data.pagination.total)
       setTotalPages(data.pagination.totalPages)
     } catch (err) {
-      console.error('Failed to fetch users:', err)
+      console.error('Failed to fetch users')
     } finally {
       setLoading(false)
     }
@@ -76,7 +76,7 @@ export default function UserManagement() {
         )
       )
     } catch (err) {
-      console.error('Failed to toggle user:', err)
+      console.error('Failed to toggle user status')
     }
   }
 

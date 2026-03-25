@@ -41,7 +41,7 @@ export default function Dashboard() {
         })
         setStats(response.data.data)
       } catch (err) {
-        console.error('Failed to fetch stats:', err)
+        console.error('Failed to fetch stats')
       } finally {
         setLoading(false)
       }

@@ -4,12 +4,21 @@ import axios from 'axios'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
+interface Announcement {
+  id: string
+  title: string
+  content: string
+  isPinned: boolean
+  isPopup: boolean
+}
+
 export default function Layout() {
   const navigate = useNavigate()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<{ name?: string; email: string } | null>(null)
   const [credits, setCredits] = useState(0)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [popupAnnouncement, setPopupAnnouncement] = useState<Announcement | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -17,7 +26,32 @@ export default function Layout() {
       setIsLoggedIn(true)
       fetchUserInfo()
     }
+    fetchPopupAnnouncement()
   }, [])
+
+  const fetchPopupAnnouncement = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/v1/announcements`)
+      const announcements = response.data.data as Announcement[]
+      const popup = announcements.find((a) => a.isPopup)
+      if (popup) {
+        // Check if already dismissed
+        const dismissed = localStorage.getItem(`announcement_dismissed_${popup.id}`)
+        if (!dismissed) {
+          setPopupAnnouncement(popup)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch announcements')
+    }
+  }
+
+  const dismissAnnouncement = () => {
+    if (popupAnnouncement) {
+      localStorage.setItem(`announcement_dismissed_${popupAnnouncement.id}`, 'true')
+    }
+    setPopupAnnouncement(null)
+  }
 
   const fetchUserInfo = async () => {
     try {
@@ -33,7 +67,7 @@ export default function Layout() {
       setUser(userRes.data.data)
       setCredits(balanceRes.data.data.credits)
     } catch (err) {
-      console.error('Failed to fetch user info:', err)
+      console.error('Failed to fetch user info')
       localStorage.removeItem('token')
       setIsLoggedIn(false)
     }
@@ -68,8 +102,7 @@ export default function Layout() {
                 to="/workspace"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
               >
-                工作台
-              </Link>
+                工作�?              </Link>
               <Link
                 to="/prompts"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
@@ -80,8 +113,7 @@ export default function Layout() {
                 to="/recharge"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
               >
-                充值
-              </Link>
+                充�?              </Link>
               <Link
                 to="/membership"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
@@ -118,8 +150,7 @@ export default function Layout() {
                         onClick={handleLogout}
                         className="text-sm text-gray-500 hover:text-red-600 transition-colors"
                       >
-                        退出
-                      </button>
+                        退�?                      </button>
                     </div>
                   </div>
                 </>
@@ -168,8 +199,7 @@ export default function Layout() {
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
-                🎨 工作台
-              </Link>
+                🎨 工作�?              </Link>
               <Link
                 to="/prompts"
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
@@ -182,8 +212,7 @@ export default function Layout() {
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
-                💰 充值
-              </Link>
+                💰 充�?              </Link>
               <Link
                 to="/membership"
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
@@ -226,8 +255,7 @@ export default function Layout() {
                       }}
                       className="block w-full text-left px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg"
                     >
-                      🚪 退出登录
-                    </button>
+                      🚪 退出登�?                    </button>
                   </div>
                 </>
               ) : (
@@ -267,9 +295,9 @@ export default function Layout() {
               <div className="text-sm">AI驱动的营销图片生成工具</div>
             </div>
             <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
-              <Link to="/workspace" className="hover:text-white transition-colors">工作台</Link>
+              <Link to="/workspace" className="hover:text-white transition-colors">工作�?/Link>
               <Link to="/prompts" className="hover:text-white transition-colors">提示词库</Link>
-              <Link to="/recharge" className="hover:text-white transition-colors">充值</Link>
+              <Link to="/recharge" className="hover:text-white transition-colors">充�?/Link>
               <Link to="/membership" className="hover:text-white transition-colors">会员</Link>
               <Link to="/feedback" className="hover:text-white transition-colors">意见反馈</Link>
               <Link to="/profile" className="hover:text-white transition-colors">个人中心</Link>
@@ -280,6 +308,38 @@ export default function Layout() {
           </div>
         </div>
       </footer>
+
+      {/* Popup Announcement */}
+      {popupAnnouncement && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="bg-indigo-600 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-semibold">📢 {popupAnnouncement.title}</h3>
+                <button
+                  onClick={dismissAnnouncement}
+                  className="text-white hover:text-indigo-200 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-4">
+              <p className="text-gray-700 whitespace-pre-wrap">{popupAnnouncement.content}</p>
+            </div>
+            <div className="px-4 pb-4">
+              <button
+                onClick={dismissAnnouncement}
+                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+

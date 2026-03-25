@@ -46,7 +46,7 @@ export default function Statistics() {
         })
         setStats(response.data.data)
       } catch (err) {
-        console.error('Failed to fetch stats:', err)
+        console.error('Failed to fetch statistics')
       } finally {
         setLoading(false)
       }

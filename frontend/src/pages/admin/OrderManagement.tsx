@@ -51,7 +51,7 @@ export default function OrderManagement() {
       setTotal(data.pagination.total)
       setTotalPages(data.pagination.totalPages)
     } catch (err) {
-      console.error('Failed to fetch orders:', err)
+      console.error('Failed to fetch orders')
     } finally {
       setLoading(false)
     }

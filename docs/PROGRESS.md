@@ -90,8 +90,9 @@
 | 用户管理 | backend | Agent | 8h | ✅ | 列表/禁用启用/搜索 |
 | 订单管理 | backend | Agent | 8h | ✅ | 列表/筛选/分页 |
 | 数据统计 | backend | Agent | 16h | ✅ | Dashboard统计API |
-| 内容审核 | backend | Agent | 8h | 🔴 | 待开发 |
-| 公告管理 | backend | Agent | 4h | 🔴 | 待开发 |
+| 内容审核 | backend | Agent | 8h | ✅ | 后端审核服务+路由+Admin UI |
+| 公告管理 | backend | Agent | 4h | ✅ | 后端公告服务+路由+Admin UI |
+| 前端公告展示 | frontend | Agent | 2h | ✅ | Layout弹窗公告 |
 
 **燃尽图**: ░░░░░░░░░░ 0%
 
@@ -307,6 +308,8 @@
 | 2026-03-25 | M3内测准备：完善内测 checklist、管理后台登录+API对接、管理员Dashboard/用户管理/订单管理/提示词管理/数据统计实时化 | Claude Code |
 | 2026-03-25 | Sprint 4支付前端：充值页面+会员购买页面+个人中心余额UI+交易记录+导航栏更新 | Agent |
 | 2026-03-25 | M3 TypeScript编译错误全面修复：前后端所有类型错误修复，前后端均可成功build，代码已push | Claude Code |
+| 2026-03-25 | 内容审核系统：Prisma Review模型、后端审核服务+路由+Admin UI审核页面 | Subagent |
+| 2026-03-25 | 公告管理系统：Prisma Announcement模型、后端公告服务+路由+Admin UI公告管理页面+前端弹窗展示 | Subagent |
 
 ---
 

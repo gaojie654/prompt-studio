@@ -109,6 +109,7 @@ model Image {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   promptId    String?
   prompt      Prompt?  @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  review      Review?
   createdAt   DateTime @default(now())
 
   @@map("images")
@@ -191,4 +192,39 @@ model ImageFile {
   createdAt   DateTime @default(now())
 
   @@map("image_files")
+}
+
+enum ReviewStatus {
+  PENDING   // 待审核
+  PASSED    // 已通过
+  REJECTED  // 已拒绝
+}
+
+model Review {
+  id           String       @id @default(cuid())
+  imageId      String
+  image        Image        @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  reviewerId   String?      // 审核人ID（管理员）
+  status       ReviewStatus @default(PENDING)
+  rejectReason String?      // 拒绝原因
+  reviewedAt   DateTime?    // 审核时间
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("reviews")
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  isPinned  Boolean  @default(false)
+  isPopup   Boolean  @default(false)  // 是否弹窗显示
+  isActive  Boolean  @default(true)
+  startAt   DateTime?
+  endAt     DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("announcements")
 }

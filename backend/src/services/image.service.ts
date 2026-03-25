@@ -1,6 +1,7 @@
 import prisma from '../utils/prisma';
 import { AppError } from '../utils/AppError';
 import { promptService } from './prompt.service';
+import { createReview } from './review.service';
 import config from '../config';
 import { storageService } from './storage/image-storage.service';
 
@@ -157,7 +158,7 @@ export class ImageService {
       try {
         const savedImage = await storageService.downloadImage(imageUrlResult, userId, image.id);
         finalUrl = savedImage.url;
-        console.log(`[ImageService] Image persisted: ${savedImage.filename}`);
+        console.info(`[ImageService] Image persisted: ${savedImage.filename}`);
       } catch (storageError) {
         // Log but don't fail - we still have the original URL (may expire)
         console.error(`[ImageService] Failed to persist image: ${(storageError as Error).message}`);
@@ -167,6 +168,9 @@ export class ImageService {
         where: { id: image.id },
         data: { url: finalUrl },
       });
+
+      // Create review record for the generated image
+      await createReview(image.id);
 
       // Increment prompt use count
       if (promptId) {

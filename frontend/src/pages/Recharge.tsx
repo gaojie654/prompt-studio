@@ -50,7 +50,7 @@ export default function Recharge() {
       const res = await axios.get(`${API_BASE}/v1/payment/packages/recharge`)
       setPackages(res.data.packages)
     } catch (err) {
-      console.error('Failed to fetch packages:', err)
+      console.error('Failed to fetch packages')
     } finally {
       setLoading(false)
     }
@@ -93,7 +93,7 @@ export default function Recharge() {
         }
       }
     } catch (err) {
-      console.error('Payment failed:', err)
+      console.error('Failed to create payment')
       alert('创建订单失败，请重试')
     } finally {
       setPaying(false)
@@ -102,7 +102,12 @@ export default function Recharge() {
 
   const startPolling = (currentOrderNo: string) => {
     setPolling(true)
+    // Track polling state outside React state to avoid closure staleness
+    let isStopped = false
+
     const poll = async () => {
+      if (isStopped) return
+
       try {
         const token = localStorage.getItem('token')
         const res = await axios.get(`${API_BASE}/v1/payment/wechat/status/${currentOrderNo}`, {
@@ -113,14 +118,16 @@ export default function Recharge() {
         setPaymentStatus(status)
 
         if (status === 'PAID') {
+          isStopped = true
           setPolling(false)
           return
         }
       } catch (err) {
-        console.error('Polling error:', err)
+        console.error('Polling error')
       }
 
-      if (paymentStatus !== 'PAID') {
+      // Continue polling unless explicitly stopped
+      if (!isStopped) {
         setTimeout(poll, 3000)
       }
     }
@@ -133,6 +140,8 @@ export default function Recharge() {
     setOrderNo('')
     setPaymentStatus('PENDING')
     setPolling(false)
+    // Note: The polling closure will stop itself via isStopped flag
+    // when it next checks (up to 3s later)
   }
 
   if (loading) {
@@ -147,8 +156,8 @@ export default function Recharge() {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">积分充值</h1>
-        <p className="text-gray-600">选择充值档位，快速获取更多积分</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">积分充�?/h1>
+        <p className="text-gray-600">选择充值档位，快速获取更多积�?/p>
       </div>
 
       {/* Package Grid */}
@@ -165,8 +174,7 @@ export default function Recharge() {
           >
             {pkg.popular && (
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-full">
-                最受欢迎
-              </span>
+                最受欢�?              </span>
             )}
             <div className="text-3xl font-bold text-gray-900 mb-1">{pkg.label}</div>
             <div className="text-2xl font-bold text-indigo-600 mb-2">¥{pkg.price}</div>
@@ -200,14 +208,14 @@ export default function Recharge() {
               }`}
             >
               <span className="text-2xl">💙</span>
-              <span className="font-medium text-gray-900">支付宝</span>
+              <span className="font-medium text-gray-900">支付�?/span>
             </button>
           </div>
 
           {/* Order Summary */}
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">充值积分</span>
+              <span className="text-gray-600">充值积�?/span>
               <span className="font-semibold text-gray-900">{selectedPackage.label}</span>
             </div>
             <div className="flex justify-between items-center mt-2">
@@ -234,9 +242,9 @@ export default function Recharge() {
       <div className="bg-indigo-50 rounded-xl p-4">
         <h4 className="font-semibold text-indigo-900 mb-2">💡 温馨提示</h4>
         <ul className="text-sm text-indigo-700 space-y-1">
-          <li>• 积分充值成功后即时到账</li>
-          <li>• 支付有效期为30分钟，请及时完成支付</li>
-          <li>• 如有问题请联系客服</li>
+          <li>�?积分充值成功后即时到账</li>
+          <li>�?支付有效期为30分钟，请及时完成支付</li>
+          <li>�?如有问题请联系客�?/li>
         </ul>
       </div>
 
@@ -244,11 +252,11 @@ export default function Recharge() {
       {showQR && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">请扫码支付</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">请扫码支�?/h3>
 
             {qrCode && (
               <div className="mb-4">
-                <img src={qrCode} alt="支付二维码" className="mx-auto w-48 h-48" />
+                <img src={qrCode} alt="支付二维�? className="mx-auto w-48 h-48" />
               </div>
             )}
 
@@ -260,16 +268,16 @@ export default function Recharge() {
             </div>
 
             <div className="mb-6">
-              <p className="text-gray-500 text-sm">订单号</p>
+              <p className="text-gray-500 text-sm">订单�?/p>
               <p className="text-xs text-gray-400 font-mono">{orderNo}</p>
             </div>
 
             {/* Status indicator */}
             <div className={`mb-6 p-3 rounded-lg ${paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : paymentStatus === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              {paymentStatus === 'PAID' && '✅ 支付成功！'}
-              {paymentStatus === 'FAILED' && '❌ 支付失败'}
-              {paymentStatus === 'PENDING' && `⏳ 等待支付${polling ? '...' : ''}`}
-              {paymentStatus === 'UNKNOWN' && '❓ 状态未知'}
+              {paymentStatus === 'PAID' && '�?支付成功�?}
+              {paymentStatus === 'FAILED' && '�?支付失败'}
+              {paymentStatus === 'PENDING' && `�?等待支付${polling ? '...' : ''}`}
+              {paymentStatus === 'UNKNOWN' && '�?状态未�?}
             </div>
 
             <button
@@ -284,3 +292,6 @@ export default function Recharge() {
     </div>
   )
 }
+
+
+

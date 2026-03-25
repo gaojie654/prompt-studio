@@ -55,7 +55,7 @@ export default function PromptManagement() {
       setTotal(data.pagination.total)
       setTotalPages(data.pagination.totalPages)
     } catch (err) {
-      console.error('Failed to fetch prompts:', err)
+      console.error('Failed to fetch prompts')
     } finally {
       setLoading(false)
     }
@@ -96,7 +96,7 @@ export default function PromptManagement() {
       setFormData({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
       fetchPrompts()
     } catch (err) {
-      console.error('Failed to save prompt:', err)
+      console.error('Failed to save prompt')
     }
   }
 
@@ -123,7 +123,7 @@ export default function PromptManagement() {
       setDeleteConfirmId(null)
       fetchPrompts()
     } catch (err) {
-      console.error('Failed to delete prompt:', err)
+      console.error('Failed to delete prompt')
     }
   }
 
@@ -137,7 +137,7 @@ export default function PromptManagement() {
         prev.map((p) => (p.id === id ? { ...p, isFeatured: !p.isFeatured } : p))
       )
     } catch (err) {
-      console.error('Failed to toggle featured:', err)
+      console.error('Failed to toggle featured status')
     }
   }
 

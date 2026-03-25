@@ -94,9 +94,8 @@ async function processPaymentSuccess(orderNo: string, transactionId: string, amo
     return;
   }
 
-  // Skip if already paid
+  // Skip if already paid (idempotent)
   if (order.status === 'PAID') {
-    console.log(`[Payment] Order already paid: ${orderNo}`);
     return;
   }
 
@@ -124,7 +123,8 @@ async function processPaymentSuccess(orderNo: string, transactionId: string, amo
     });
   }
 
-  console.log(`[Payment] Successfully processed: ${orderNo}, amount: ${amount}`);
+  // Log success internally (no sensitive data exposed to client)
+  console.info(`[Payment] Processed: ${orderNo}`);
 }
 
 export default router;

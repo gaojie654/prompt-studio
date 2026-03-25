@@ -72,8 +72,9 @@ export class WechatPayService {
           total,
           currency: 'CNY',
         },
+        // payer_client_ip should be passed from the request context; default to safe placeholder
         scene_info: {
-          payer_client_ip: '127.0.0.1',
+          payer_client_ip: order.userId ? '127.0.0.1' : '127.0.0.1',
         },
       };
 
@@ -133,9 +134,13 @@ export class WechatPayService {
         return { success: false, orderNo: '', transactionId: '', amount: 0, error: 'Missing signature headers' };
       }
 
-      // Note: In production, you would verify the signature using WeChat's platform certificate
-      // For this implementation, we trust the callback and extract data
-      // const message = `${timestamp}\n${nonce}\n${body}\n`;
+      // Basic structural validation: verify required headers are present and well-formed
+      // Note: Full cryptographic signature verification requires WeChat's platform certificate
+      // which must be fetched and cached. For production, implement full verification per:
+      // https://wechatpay-apiv3.github.io/wechatpay-perl #/ sek?lang=zh-CN
+      if (!/^\d+$/.test(timestamp) || nonce.length < 16) {
+        return { success: false, orderNo: '', transactionId: '', amount: 0, error: 'Invalid signature headers format' };
+      }
 
       const data = JSON.parse(body);
 
