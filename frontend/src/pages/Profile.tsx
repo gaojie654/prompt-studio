@@ -12,10 +12,19 @@ interface User {
   createdAt: string
 }
 
-interface Membership {
+interface Balance {
   credits: number
   tier: string
   expiresAt?: string
+}
+
+interface Transaction {
+  id: string
+  type: string
+  amount: number
+  credits: number
+  description: string
+  createdAt: string
 }
 
 interface GeneratedImage {
@@ -28,11 +37,12 @@ interface GeneratedImage {
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null)
-  const [membership, setMembership] = useState<Membership | null>(null)
+  const [balance, setBalance] = useState<Balance | null>(null)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [images, setImages] = useState<GeneratedImage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'history' | 'settings'>('history')
+  const [activeTab, setActiveTab] = useState<'history' | 'settings' | 'transactions'>('history')
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -51,14 +61,16 @@ export default function Profile() {
       const token = localStorage.getItem('token')
       const headers = { Authorization: `Bearer ${token}` }
 
-      const [userRes, balanceRes, imagesRes] = await Promise.all([
+      const [userRes, balanceRes, txRes, imagesRes] = await Promise.all([
         axios.get(`${API_BASE}/users/me`, { headers }),
-        axios.get(`${API_BASE}/users/balance`, { headers }),
+        axios.get(`${API_BASE}/v1/payment/balance`, { headers }),
+        axios.get(`${API_BASE}/v1/payment/transactions?pageSize=20`, { headers }),
         axios.get(`${API_BASE}/images?pageSize=20`, { headers }),
       ])
 
-      setUser(userRes.data.data)
-      setMembership(balanceRes.data.data)
+      setUser(userRes.data.data || userRes.data)
+      setBalance(balanceRes.data.balance)
+      setTransactions(txRes.data.transactions || [])
       setImages(imagesRes.data.data || [])
     } catch (err: any) {
       if (err.response?.status === 401) {
@@ -71,6 +83,37 @@ export default function Profile() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const getTransactionTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      TOPUP: '充值',
+      MEMBERSHIP: '会员购买',
+      CONSUME: '消耗',
+      REFUND: '退款',
+      DAILY_BONUS: '每日赠送',
+    }
+    return labels[type] || type
+  }
+
+  const getTransactionTypeColor = (type: string) => {
+    if (type === 'TOPUP' || type === 'DAILY_BONUS' || type === 'REFUND') {
+      return 'text-green-600'
+    }
+    if (type === 'MEMBERSHIP') {
+      return 'text-purple-600'
+    }
+    return 'text-gray-600'
   }
 
   if (loading) {
@@ -110,32 +153,56 @@ export default function Profile() {
 
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+        {/* Balance Card */}
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <span className="text-2xl">⚡</span>
             </div>
             <div>
-              <p className="text-sm text-gray-500">剩余额度</p>
-              <p className="text-2xl font-bold text-gray-900">{membership?.credits || 0}</p>
+              <p className="text-white/80 text-sm">剩余积分</p>
+              <p className="text-3xl font-bold">{balance?.credits ?? 0}</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              to="/recharge"
+              className="flex-1 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-center text-sm font-medium transition-colors"
+            >
+              充值积分
+            </Link>
           </div>
         </div>
 
+        {/* Membership Card */}
         <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-3">
             <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
               <span className="text-2xl">👑</span>
             </div>
             <div>
               <p className="text-sm text-gray-500">会员等级</p>
-              <p className="text-2xl font-bold text-gray-900">{membership?.tier || 'FREE'}</p>
+              <p className="text-2xl font-bold text-gray-900">{balance?.tier || 'FREE'}</p>
             </div>
           </div>
+          {balance?.tier && balance.tier !== 'FREE' && balance.expiresAt && (
+            <p className="text-xs text-gray-500">
+              到期: {new Date(balance.expiresAt).toLocaleDateString('zh-CN')}
+            </p>
+          )}
+          {!balance?.tier || balance.tier === 'FREE' ? (
+            <Link
+              to="/membership"
+              className="mt-2 block w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-center text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-colors"
+            >
+              开通会员
+            </Link>
+          ) : null}
         </div>
 
+        {/* Generated Images Card */}
         <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-3">
             <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
               <span className="text-2xl">🎨</span>
             </div>
@@ -145,6 +212,41 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
+        <Link
+          to="/recharge"
+          className="flex items-center gap-4 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+        >
+          <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <span className="text-2xl">💰</span>
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-gray-900">充值积分</div>
+            <div className="text-sm text-gray-500">快速充值更多积分</div>
+          </div>
+          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+
+        <Link
+          to="/membership"
+          className="flex items-center gap-4 bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+        >
+          <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+            <span className="text-2xl">👑</span>
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-gray-900">开通会员</div>
+            <div className="text-sm text-gray-500">解锁更多权益</div>
+          </div>
+          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
 
       {/* Tabs */}
@@ -160,6 +262,16 @@ export default function Profile() {
               }`}
             >
               生成历史
+            </button>
+            <button
+              onClick={() => setActiveTab('transactions')}
+              className={`px-6 py-4 font-medium transition-colors ${
+                activeTab === 'transactions'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              交易记录
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -217,6 +329,57 @@ export default function Profile() {
             </>
           )}
 
+          {activeTab === 'transactions' && (
+            <>
+              {transactions.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p className="text-gray-600 mb-4">暂无交易记录</p>
+                  <Link
+                    to="/recharge"
+                    className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                  >
+                    去充值
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {transactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          tx.credits > 0 ? 'bg-green-100' : 'bg-gray-100'
+                        }`}>
+                          <span className={getTransactionTypeColor(tx.type)}>
+                            {tx.credits > 0 ? '+' : ''}{tx.credits}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {getTransactionTypeLabel(tx.type)}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {formatDate(tx.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-semibold ${tx.credits > 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                          {tx.credits > 0 ? '+' : ''}{tx.credits}
+                        </div>
+                        {tx.amount > 0 && (
+                          <div className="text-sm text-gray-500">¥{tx.amount}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
           {activeTab === 'settings' && (
             <div className="space-y-6">
               {/* Account Info */}
@@ -251,9 +414,12 @@ export default function Profile() {
                       <h4 className="text-xl font-bold mb-1">升级到 Pro 版本</h4>
                       <p className="text-white/80">解锁无限额度、优先生成、更多模板</p>
                     </div>
-                    <button className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-semibold hover:bg-yellow-300 transition-colors">
+                    <Link
+                      to="/membership"
+                      className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-semibold hover:bg-yellow-300 transition-colors"
+                    >
                       立即升级
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

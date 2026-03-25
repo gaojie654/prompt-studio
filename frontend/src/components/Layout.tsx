@@ -77,6 +77,18 @@ export default function Layout() {
                 提示词库
               </Link>
               <Link
+                to="/recharge"
+                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
+              >
+                充值
+              </Link>
+              <Link
+                to="/membership"
+                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
+              >
+                会员
+              </Link>
+              <Link
                 to="/feedback"
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
               >
@@ -166,6 +178,20 @@ export default function Layout() {
                 📝 提示词库
               </Link>
               <Link
+                to="/recharge"
+                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                💰 充值
+              </Link>
+              <Link
+                to="/membership"
+                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                👑 会员
+              </Link>
+              <Link
                 to="/feedback"
                 className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
                 onClick={() => setShowMobileMenu(false)}
@@ -243,6 +269,8 @@ export default function Layout() {
             <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
               <Link to="/workspace" className="hover:text-white transition-colors">工作台</Link>
               <Link to="/prompts" className="hover:text-white transition-colors">提示词库</Link>
+              <Link to="/recharge" className="hover:text-white transition-colors">充值</Link>
+              <Link to="/membership" className="hover:text-white transition-colors">会员</Link>
               <Link to="/feedback" className="hover:text-white transition-colors">意见反馈</Link>
               <Link to="/profile" className="hover:text-white transition-colors">个人中心</Link>
             </div>

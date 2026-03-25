@@ -6,6 +6,8 @@ import Profile from './pages/Profile'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Feedback from './pages/Feedback'
+import Recharge from './pages/Recharge'
+import Membership from './pages/Membership'
 import Layout from './components/Layout'
 import AdminLayout from './components/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
@@ -14,6 +16,7 @@ import OrderManagement from './pages/admin/OrderManagement'
 import PromptManagement from './pages/admin/PromptManagement'
 import Statistics from './pages/admin/Statistics'
 import Settings from './pages/admin/Settings'
+import AdminLogin from './pages/admin/Login'
 
 function App() {
   return (
@@ -25,11 +28,14 @@ function App() {
         <Route path="prompts" element={<Prompts />} />
         <Route path="profile" element={<Profile />} />
         <Route path="feedback" element={<Feedback />} />
+        <Route path="recharge" element={<Recharge />} />
+        <Route path="membership" element={<Membership />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
       </Route>
 
       {/* Admin routes */}
+      <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="users" element={<UserManagement />} />
