@@ -85,7 +85,7 @@ dump.rdb
 
 # Uploads
 uploads/
-storage/
+!backend/src/services/storage/
 
 # ==========================================
 # Frontend specific
