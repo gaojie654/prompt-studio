@@ -1,8 +1,266 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import axios from 'axios'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+
+interface User {
+  id: string
+  email: string
+  name?: string
+  avatar?: string
+  createdAt: string
+}
+
+interface Membership {
+  credits: number
+  tier: string
+  expiresAt?: string
+}
+
+interface GeneratedImage {
+  id: string
+  url: string
+  width: number
+  height: number
+  createdAt: string
+}
+
 export default function Profile() {
+  const [user, setUser] = useState<User | null>(null)
+  const [membership, setMembership] = useState<Membership | null>(null)
+  const [images, setImages] = useState<GeneratedImage[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'history' | 'settings'>('history')
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      window.location.href = '/'
+      return
+    }
+
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+
+      const [userRes, balanceRes, imagesRes] = await Promise.all([
+        axios.get(`${API_BASE}/users/me`, { headers }),
+        axios.get(`${API_BASE}/users/balance`, { headers }),
+        axios.get(`${API_BASE}/images?pageSize=20`, { headers }),
+      ])
+
+      setUser(userRes.data.data)
+      setMembership(balanceRes.data.data)
+      setImages(imagesRes.data.data || [])
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token')
+        window.location.href = '/'
+        return
+      }
+      setError('获取数据失败，请刷新页面重试')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl">
+        {error}
+      </div>
+    )
+  }
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Profile</h2>
-      <p className="text-gray-600">Manage your account settings.</p>
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+        <div className="flex items-center gap-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+            <span className="text-white text-2xl font-bold">
+              {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+            </span>
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              {user?.name || '用户'}
+            </h1>
+            <p className="text-gray-500">{user?.email}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+              <span className="text-2xl">⚡</span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">剩余额度</p>
+              <p className="text-2xl font-bold text-gray-900">{membership?.credits || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <span className="text-2xl">👑</span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">会员等级</p>
+              <p className="text-2xl font-bold text-gray-900">{membership?.tier || 'FREE'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <span className="text-2xl">🎨</span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">已生成</p>
+              <p className="text-2xl font-bold text-gray-900">{images.length} 张</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-xl shadow-sm">
+        <div className="border-b">
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-6 py-4 font-medium transition-colors ${
+                activeTab === 'history'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              生成历史
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-6 py-4 font-medium transition-colors ${
+                activeTab === 'settings'
+                  ? 'text-indigo-600 border-b-2 border-indigo-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              账户设置
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {activeTab === 'history' && (
+            <>
+              {images.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-gray-600 mb-4">还没有生成记录</p>
+                  <Link
+                    to="/workspace"
+                    className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                  >
+                    去生成图片
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-4">
+                  {images.map((image) => (
+                    <div key={image.id} className="relative group">
+                      <img
+                        src={image.url}
+                        alt="Generated"
+                        className="w-full aspect-square object-cover rounded-lg bg-gray-100"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                        <button className="px-3 py-1.5 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-100">
+                          下载
+                        </button>
+                        <button className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+                          使用
+                        </button>
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2 text-xs text-white bg-black/50 rounded px-2 py-1">
+                        {image.width}×{image.height}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              {/* Account Info */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-4">账户信息</h3>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">邮箱</span>
+                    <span className="text-gray-900">{user?.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">昵称</span>
+                    <span className="text-gray-900">{user?.name || '未设置'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">注册时间</span>
+                    <span className="text-gray-900">
+                      {user?.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString('zh-CN')
+                        : '-'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upgrade */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-4">升级会员</h3>
+                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xl font-bold mb-1">升级到 Pro 版本</h4>
+                      <p className="text-white/80">解锁无限额度、优先生成、更多模板</p>
+                    </div>
+                    <button className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-semibold hover:bg-yellow-300 transition-colors">
+                      立即升级
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
