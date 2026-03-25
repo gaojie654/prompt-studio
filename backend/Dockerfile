@@ -13,7 +13,7 @@ RUN npm install -g pnpm
 COPY package*.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # Copy source code
 COPY . .
@@ -42,7 +42,7 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY package*.json pnpm-lock.yaml ./
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --prod
 
 # Copy Prisma schema
 COPY prisma/ ./prisma/

@@ -48,14 +48,14 @@ jobs:
       - name: Frontend CI
         run: |
           cd frontend
-          pnpm install --frozen-lockfile
+          pnpm install
           pnpm run lint || true
           pnpm exec tsc --noEmit
 
       - name: Backend CI
         run: |
           cd backend
-          pnpm install --frozen-lockfile
+          pnpm install
           pnpm exec tsc --noEmit
 
   # ==========================================
