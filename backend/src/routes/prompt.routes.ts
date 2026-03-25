@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/AppError';
 import { authenticate } from '../middleware/auth';
 import { list, search, getCategories, getById, create, update, remove } from '../controllers/prompt.controller';
 
-const router = Router();
+const router: Router = Router();
 
 const createPromptSchema = z.object({
   body: z.object({

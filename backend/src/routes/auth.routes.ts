@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/AppError';
 import { authenticate } from '../middleware/auth';
 import { register, login, refresh, logout, logoutAll } from '../controllers/auth.controller';
 
-const router = Router();
+const router: Router = Router();
 
 const registerSchema = z.object({
   body: z.object({

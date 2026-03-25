@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/AppError';
 import { authenticate } from '../middleware/auth';
 import { generate, list, getById, remove, getPlatformSizes } from '../controllers/image.controller';
 
-const router = Router();
+const router: Router = Router();
 
 const generateImageSchema = z.object({
   body: z.object({

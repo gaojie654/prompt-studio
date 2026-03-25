@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
 import * as adminController from '../controllers/admin.controller';
 
-const router = Router();
+const router: Router = Router();
 
 // Admin login (no auth required)
 router.post('/login', adminController.login);

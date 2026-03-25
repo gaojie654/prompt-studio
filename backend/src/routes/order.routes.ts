@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../utils/AppError';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/', authenticate, asyncHandler(async (_req: Request, res: Response) => {
   // TODO: List orders - use /api/v1/payment/orders instead

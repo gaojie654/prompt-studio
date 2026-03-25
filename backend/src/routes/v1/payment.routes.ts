@@ -15,7 +15,7 @@ import { RECHARGE_PACKAGES, MEMBERSHIP_CARDS } from '../../services/payment/type
 import { OrderType } from '@prisma/client';
 import prisma from '../../utils/prisma';
 
-const router = Router();
+const router: Router = Router();
 
 // ============================================================
 // 公共接口（无需认证的部分）
@@ -92,8 +92,7 @@ router.get(
 );
 
 // ============================================================
-// 创建充值订单
-// POST /api/v1/payment/recharge
+// 创建充值订单// POST /api/v1/payment/recharge
 // Body: { packageId: string, paymentMethod: 'WECHAT' | 'ALIPAY' }
 // ============================================================
 router.post(
@@ -120,7 +119,7 @@ router.post(
         orderId: order.id,
         orderNo: order.orderNo,
         amount: order.amount,
-        description: order.description || `充值订单 ${order.orderNo}`,
+        description: order.description || `充值订单${order.orderNo}`,
         userId: req.user!.userId,
       });
     } else if (paymentMethod === 'ALIPAY') {
@@ -128,7 +127,7 @@ router.post(
         orderId: order.id,
         orderNo: order.orderNo,
         amount: order.amount,
-        description: order.description || `充值订单 ${order.orderNo}`,
+        description: order.description || `充值订单${order.orderNo}`,
         userId: req.user!.userId,
       });
     } else {
@@ -212,7 +211,7 @@ router.post(
 );
 
 // ============================================================
-// 查询微信支付订单状态 (用于前端轮询)
+// 查询微信支付订单状态(用于前端轮询)
 // GET /api/v1/payment/wechat/status/:orderNo
 // ============================================================
 router.get(
@@ -250,8 +249,7 @@ router.get(
 );
 
 // ============================================================
-// 查询支付宝订单状态
-// GET /api/v1/payment/alipay/status/:orderNo
+// 查询支付宝订单状态// GET /api/v1/payment/alipay/status/:orderNo
 // ============================================================
 router.get(
   '/alipay/status/:orderNo',

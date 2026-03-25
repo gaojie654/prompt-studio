@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
 import * as reviewController from '../controllers/review.controller';
 
-const router = Router();
+const router: Router = Router();
 
 // All routes require authentication AND admin role
 router.use(authenticate, requireAdmin);

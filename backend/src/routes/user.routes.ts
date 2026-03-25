@@ -4,7 +4,7 @@ import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
 import { getMe, updateMe, getBalance } from '../controllers/user.controller';
 
-const router = Router();
+const router: Router = Router();
 
 const updateUserSchema = z.object({
   body: z.object({

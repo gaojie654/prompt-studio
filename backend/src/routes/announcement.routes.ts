@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
 import * as announcementController from '../controllers/announcement.controller';
 
-const router = Router();
+const router: Router = Router();
 
 // Public routes (no auth required)
 router.get('/announcements', announcementController.getActiveAnnouncements);

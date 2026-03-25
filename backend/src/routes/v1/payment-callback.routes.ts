@@ -12,7 +12,7 @@ import { balanceService } from '../../services/payment/balance.service';
 import prisma from '../../utils/prisma';
 import { OrderType } from '@prisma/client';
 
-const router = Router();
+const router: Router = Router();
 
 // ============================================================
 // 微信支付回调
@@ -43,7 +43,7 @@ router.post(
 );
 
 // ============================================================
-// 支付宝回调 (notify_url - 异步通知)
+// 支付宝回�?(notify_url - 异步通知)
 // ============================================================
 router.post(
   '/alipay/notify',
@@ -61,7 +61,7 @@ router.post(
 );
 
 // ============================================================
-// 支付宝跳转回调 (return_url - 同步跳转)
+// 支付宝跳转回�?(return_url - 同步跳转)
 // This endpoint handles the redirect after payment on Alipay's page
 // ============================================================
 router.get(

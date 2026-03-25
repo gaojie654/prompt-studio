@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -21,7 +21,7 @@ import announcementRoutes from './routes/announcement.routes';
 import paymentRoutes from './routes/v1/payment.routes';
 import paymentCallbackRoutes from './routes/v1/payment-callback.routes';
 
-const app = express();
+const app: Application = express();
 
 // Trust proxy (for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
