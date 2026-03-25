@@ -50,6 +50,7 @@ export class AuthService {
             tier: 'FREE',
             credits: 100,
             totalCredits: 100,
+            balance: 0,
           },
         },
       },
