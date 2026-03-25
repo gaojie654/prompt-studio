@@ -5,6 +5,7 @@ import Prompts from './pages/Prompts'
 import Profile from './pages/Profile'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Feedback from './pages/Feedback'
 import Layout from './components/Layout'
 import AdminLayout from './components/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
@@ -23,6 +24,7 @@ function App() {
         <Route path="workspace" element={<Workspace />} />
         <Route path="prompts" element={<Prompts />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="feedback" element={<Feedback />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
       </Route>

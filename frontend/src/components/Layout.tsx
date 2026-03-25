@@ -34,7 +34,6 @@ export default function Layout() {
       setCredits(balanceRes.data.data.credits)
     } catch (err) {
       console.error('Failed to fetch user info:', err)
-      // Token might be invalid
       localStorage.removeItem('token')
       setIsLoggedIn(false)
     }
@@ -76,6 +75,12 @@ export default function Layout() {
                 className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
               >
                 提示词库
+              </Link>
+              <Link
+                to="/feedback"
+                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
+              >
+                意见反馈
               </Link>
 
               {isLoggedIn ? (
@@ -145,49 +150,77 @@ export default function Layout() {
         {/* Mobile menu */}
         {showMobileMenu && (
           <div className="md:hidden bg-white border-t">
-            <div className="px-4 py-3 space-y-2">
+            <div className="px-4 py-3 space-y-1">
               <Link
                 to="/workspace"
-                className="block px-3 py-2 text-gray-600 hover:text-indigo-600 font-medium"
+                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                onClick={() => setShowMobileMenu(false)}
               >
-                工作台
+                🎨 工作台
               </Link>
               <Link
                 to="/prompts"
-                className="block px-3 py-2 text-gray-600 hover:text-indigo-600 font-medium"
+                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                onClick={() => setShowMobileMenu(false)}
               >
-                提示词库
+                📝 提示词库
+              </Link>
+              <Link
+                to="/feedback"
+                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                💬 意见反馈
               </Link>
               {isLoggedIn ? (
                 <>
                   <Link
                     to="/profile"
-                    className="block px-3 py-2 text-gray-600 hover:text-indigo-600 font-medium"
+                    className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                    onClick={() => setShowMobileMenu(false)}
                   >
-                    个人中心
+                    👤 个人中心
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-3 py-2 text-red-600"
-                  >
-                    退出登录
-                  </button>
+                  <div className="pt-2 mt-2 border-t">
+                    <div className="flex items-center gap-3 px-3 py-2">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <span className="text-indigo-600 font-medium text-sm">
+                          {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{user?.name || '用户'}</p>
+                        <p className="text-xs text-gray-500">{credits} 额度</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        setShowMobileMenu(false)
+                      }}
+                      className="block w-full text-left px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      🚪 退出登录
+                    </button>
+                  </div>
                 </>
               ) : (
-                <>
+                <div className="pt-2 mt-2 border-t space-y-1">
                   <Link
                     to="/login"
-                    className="block px-3 py-2 text-gray-600 hover:text-indigo-600 font-medium"
+                    className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                    onClick={() => setShowMobileMenu(false)}
                   >
                     登录
                   </Link>
                   <Link
                     to="/register"
-                    className="block px-3 py-2 text-indigo-600 font-medium"
+                    className="block px-3 py-2.5 text-indigo-600 bg-indigo-50 rounded-lg font-medium"
+                    onClick={() => setShowMobileMenu(false)}
                   >
                     注册
                   </Link>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -195,9 +228,30 @@ export default function Layout() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <Outlet />
       </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-8 md:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-center md:text-left">
+              <div className="text-xl font-bold text-white mb-1">Prompt Studio</div>
+              <div className="text-sm">AI驱动的营销图片生成工具</div>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
+              <Link to="/workspace" className="hover:text-white transition-colors">工作台</Link>
+              <Link to="/prompts" className="hover:text-white transition-colors">提示词库</Link>
+              <Link to="/feedback" className="hover:text-white transition-colors">意见反馈</Link>
+              <Link to="/profile" className="hover:text-white transition-colors">个人中心</Link>
+            </div>
+          </div>
+          <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-gray-800 text-center text-xs md:text-sm">
+            © 2026 Prompt Studio. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
