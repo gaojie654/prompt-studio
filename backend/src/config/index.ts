@@ -47,4 +47,12 @@ export default {
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
   },
+
+  wanx: {
+    apiKey: process.env.WANX_API_KEY,
+    baseUrl: process.env.WANX_BASE_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
+    model: 'wan2.6-image',
+    timeout: parseInt(process.env.WANX_TIMEOUT || '120000', 10), // 120s timeout for image generation
+    retryAttempts: parseInt(process.env.WANX_RETRY_ATTEMPTS || '2', 10),
+  },
 };
