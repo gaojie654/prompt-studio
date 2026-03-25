@@ -2,6 +2,7 @@ import prisma from '../utils/prisma';
 import { AppError } from '../utils/AppError';
 import { promptService } from './prompt.service';
 import config from '../config';
+import { storageService } from './storage/image-storage.service';
 
 // Platform size specifications
 export const PLATFORM_SIZES = {
@@ -150,9 +151,21 @@ export class ImageService {
       });
 
       // Update image record with the generated URL
+      let finalUrl = imageUrlResult;
+
+      // Persist image to local/OSS storage
+      try {
+        const savedImage = await storageService.downloadImage(imageUrlResult, userId, image.id);
+        finalUrl = savedImage.url;
+        console.log(`[ImageService] Image persisted: ${savedImage.filename}`);
+      } catch (storageError) {
+        // Log but don't fail - we still have the original URL (may expire)
+        console.error(`[ImageService] Failed to persist image: ${(storageError as Error).message}`);
+      }
+
       const updatedImage = await prisma.image.update({
         where: { id: image.id },
-        data: { url: imageUrlResult },
+        data: { url: finalUrl },
       });
 
       // Increment prompt use count
