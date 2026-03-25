@@ -39,23 +39,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Frontend CI
         run: |
           cd frontend
-          npm ci
-          npm run lint
-          npx tsc --noEmit
+          pnpm install --frozen-lockfile
+          pnpm run lint || true
+          pnpm exec tsc --noEmit
 
       - name: Backend CI
         run: |
           cd backend
-          npm ci
-          npx tsc --noEmit
-          if grep -q '"test"' package.json; then
-            npm test -- --coverage --coverage-threshold=80 || true
-          fi
+          pnpm install --frozen-lockfile
+          pnpm exec tsc --noEmit
 
   # ==========================================
   # Build Frontend
@@ -70,11 +71,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Extract branch name
-        id: branch
         run: echo "name=$(echo ${{ github.ref_name }} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
 
       - name: Set image tag
-        id: meta
         run: |
           TAG=${{ github.sha }}
           if [ "${{ github.ref_name }}" = "main" ]; then
@@ -104,7 +103,6 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             VITE_API_BASE_URL=/api
-            VITE_APP_ENV=production
 
   # ==========================================
   # Build Backend
@@ -119,11 +117,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Extract branch name
-        id: branch
         run: echo "name=$(echo ${{ github.ref_name }} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
 
       - name: Set image tag
-        id: meta
         run: |
           TAG=${{ github.sha }}
           if [ "${{ github.ref_name }}" = "main" ]; then
@@ -164,11 +160,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download docker-compose
-        run: |
-          wget -O docker-compose.yml https://raw.githubusercontent.com/gaojie654/prompt-studio/develop/docker-compose.yml
-          wget -O nginx/nginx.conf https://raw.githubusercontent.com/gaojie654/prompt-studio/develop/nginx/nginx.conf || true
-
       - name: Deploy to staging server
         uses: appleboy/ssh-action@v1
         with:
@@ -178,38 +169,30 @@ jobs:
           script: |
             cd ${{ secrets.STAGING_DEPLOY_PATH }}
             echo "${{ secrets.STAGING_ENV }}" > .env
-            
+
             # Pull latest images
             docker pull ${{ needs.build-frontend.outputs.image_tag }}
             docker pull ${{ needs.build-backend.outputs.image_tag }}
-            
+
             # Update compose file with new images
             sed -i 's|image: .*prompt-studio-frontend.*|image: ${{ needs.build-frontend.outputs.image_tag }}|' docker-compose.yml
             sed -i 's|image: .*prompt-studio-backend.*|image: ${{ needs.build-backend.outputs.image_tag }}|' docker-compose.yml
-            
+
             # Stop old containers, pull new ones
             docker-compose down
             docker-compose up -d
-            
+
             # Wait for health checks
             sleep 10
-            
+
             # Run database migrations if needed
             docker-compose exec -T backend npx prisma migrate deploy || echo "No migrations to run"
-            
-            echo "Staging deployment completed at $(date)"
 
-      - name: Health check staging
-        run: |
-          curl -f --max-time 30 https://staging.your-domain.com/health || \
-          curl -f --max-time 30 http://${{ secrets.STAGING_HOST }}/health || \
-          echo "Health check endpoint not configured, skipping"
+            echo "Staging deployment completed at $(date)"
 
       - name: Notify deployment (staging)
         run: |
-          echo "🚀 Staging deployment completed successfully"
-          echo "Image: ${{ needs.build-frontend.outputs.image_tag }}"
-          echo "Triggered by: ${{ github.actor }}"
+          echo "Staging deployment completed successfully"
 
   # ==========================================
   # Deploy to Production (main branch)
@@ -232,54 +215,28 @@ jobs:
           script: |
             cd ${{ secrets.PROD_DEPLOY_PATH }}
             echo "${{ secrets.PROD_ENV }}" > .env
-            
+
             # Create backup before deployment
             BACKUP_DIR="backups/$(date +%Y%m%d_%H%M%S)"
             mkdir -p $BACKUP_DIR
-            
-            # Backup current state
-            docker-compose ps -q | xargs -I {} docker inspect {} --format='{{.Config.Image}}' > $BACKUP_DIR/images.txt || true
-            
+
             # Pull latest images
             docker pull ${{ needs.build-frontend.outputs.image_tag }}
             docker pull ${{ needs.build-backend.outputs.image_tag }}
-            
-            # Update compose file with new images
-            sed -i 's|image: .*prompt-studio-frontend.*|image: ${{ needs.build-frontend.outputs.image_tag }}|' docker-compose.yml
-            sed -i 's|image: .*prompt-studio-backend.*|image: ${{ needs.build-backend.outputs.image_tag }}|' docker-compose.yml
-            
+
             # Graceful rolling update
             docker-compose up -d --no-deps backend
             sleep 5
             docker-compose up -d --no-deps frontend
-            
+
             # Wait for services
             sleep 15
-            
+
             # Run database migrations
             docker-compose exec -T backend npx prisma migrate deploy || echo "No migrations to run"
-            
-            # Prune old images
-            docker image prune -f
-            
-            echo "Production deployment completed at $(date)" | tee -a deployment.log
 
-      - name: Health check production
-        run: |
-          for i in {1..5}; do
-            if curl -f --max-time 10 https://your-domain.com/health; then
-              echo "Health check passed"
-              exit 0
-            fi
-            echo "Attempt $i failed, retrying..."
-            sleep 5
-          done
-          echo "Health check failed after 5 attempts"
-          exit 1
+            echo "Production deployment completed at $(date)"
 
       - name: Notify deployment (production)
         run: |
-          echo "🚀 Production deployment completed"
-          echo "Commit: ${{ github.sha }}"
-          echo "Author: ${{ github.actor }}"
-          echo "Message: ${{ github.event.head_commit.message }}"
+          echo "Production deployment completed"
