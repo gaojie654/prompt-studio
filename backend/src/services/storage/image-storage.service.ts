@@ -315,6 +315,61 @@ export class StorageService {
   }
 
   /**
+   * Upload a base64 data URI as an image file
+   * Returns the public URL of the saved file
+   */
+  async uploadBase64Image(base64DataUri: string, userId: string): Promise<DownloadResult> {
+    // Parse the data URI: "data:image/jpeg;base64,xxxxx"
+    const matches = base64DataUri.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) {
+      throw new AppError('Invalid base64 data URI', 400, 'INVALID_BASE64');
+    }
+
+    const mimeType = matches[1];
+    const base64Content = matches[2];
+
+    // Determine extension from mime type
+    const extension = this.getExtensionFromMimeType(mimeType);
+    const filename = `ref_${Date.now()}_${Math.random().toString(36).substring(7)}${extension}`;
+    const localConfig = this.storageConfig.local!;
+
+    // Create user directory
+    const userDir = path.join(localConfig.basePath, userId);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir, { recursive: true });
+    }
+
+    const localPath = path.join(userDir, filename);
+    const buffer = Buffer.from(base64Content, 'base64');
+    const size = buffer.byteLength;
+
+    // Write file
+    fs.writeFileSync(localPath, buffer);
+
+    const publicUrl = `${localConfig.baseUrl}/${userId}/${filename}`;
+
+    // Save to database
+    await prisma.imageFile.create({
+      data: {
+        originalUrl: base64DataUri,
+        localPath,
+        filename,
+        size,
+        mimeType,
+        userId,
+      },
+    });
+
+    return {
+      localPath,
+      filename,
+      url: publicUrl,
+      size,
+      mimeType,
+    };
+  }
+
+  /**
    * Get public URL for an image
    */
   getPublicUrl(filename: string): string {

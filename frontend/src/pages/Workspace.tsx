@@ -144,13 +144,31 @@ export default function Workspace() {
 
     try {
       const token = localStorage.getItem('token')
+
+      // If uploadedImage is a base64 data URI, upload it first to get a URL
+      let referenceImageUrl: string | undefined
+      if (uploadedImage && uploadedImage.startsWith('data:')) {
+        const uploadResponse = await axios.post(
+          `${API_BASE}/images/upload`,
+          { image: uploadedImage },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        referenceImageUrl = uploadResponse.data.data.url
+      } else {
+        referenceImageUrl = uploadedImage || undefined
+      }
+
       const response = await axios.post(
         `${API_BASE}/images/generate`,
         {
           platform: selectedPlatform,
           prompt: customPrompt,
           negativePrompt,
-          imageUrl: uploadedImage,
+          imageUrl: referenceImageUrl,
         },
         {
           headers: {

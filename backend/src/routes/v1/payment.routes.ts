@@ -23,6 +23,7 @@ const router: Router = Router();
 
 // 获取充值套餐列表
 router.get('/packages/recharge', asyncHandler(async (_req: Request, res: Response) => {
+  console.log('[PAYMENT ROUTES] /packages/recharge handler called!');
   res.json({ packages: RECHARGE_PACKAGES });
 }));
 

@@ -119,25 +119,22 @@ async function main() {
     },
   ];
 
-  for (const promptData of samplePrompts) {
-    await prisma.prompt.upsert({
-      where: {
-        id: promptData.title, // Use title as unique identifier for upsert
-      },
-      update: {
-        ...promptData,
-        useCount: Math.floor(Math.random() * 1000),
-        likeCount: Math.floor(Math.random() * 100),
-        viewCount: Math.floor(Math.random() * 5000),
-      },
-      create: {
-        ...promptData,
-        useCount: Math.floor(Math.random() * 1000),
-        likeCount: Math.floor(Math.random() * 100),
-        viewCount: Math.floor(Math.random() * 5000),
-      },
-    });
-  }
+  // Delete existing sample prompts for demo user first
+  await prisma.prompt.deleteMany({
+    where: { authorId: demoUser.id },
+  });
+
+  // Create new sample prompts
+  const promptsWithCounts = samplePrompts.map((promptData) => ({
+    ...promptData,
+    useCount: Math.floor(Math.random() * 1000),
+    likeCount: Math.floor(Math.random() * 100),
+    viewCount: Math.floor(Math.random() * 5000),
+  }));
+
+  await prisma.prompt.createMany({
+    data: promptsWithCounts,
+  });
   console.log('✅ Sample prompts created:', samplePrompts.length);
 
   console.log('🎉 Seeding completed!');

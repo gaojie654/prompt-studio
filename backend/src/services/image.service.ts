@@ -454,6 +454,14 @@ export class ImageService {
   }
 
   /**
+   * Upload a base64 reference image and return its URL
+   */
+  async uploadReferenceImage(userId: string, base64DataUri: string) {
+    const result = await storageService.uploadBase64Image(base64DataUri, userId);
+    return { url: result.url };
+  }
+
+  /**
    * Get available platform sizes
    */
   getPlatformSizes() {

@@ -4,6 +4,35 @@ import { asyncHandler } from '../utils/AppError';
 import { AppError } from '../utils/AppError';
 
 /**
+ * POST /api/images/upload
+ * Upload a base64 reference image and get a URL
+ */
+export const upload = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+  }
+
+  const { image } = req.body as { image?: string };
+
+  if (!image) {
+    throw new AppError('Image data is required', 400, 'MISSING_IMAGE');
+  }
+
+  // Validate it's a data URI
+  if (!image.startsWith('data:image/')) {
+    throw new AppError('Invalid image format. Expected base64 data URI.', 400, 'INVALID_IMAGE_FORMAT');
+  }
+
+  const result = await imageService.uploadReferenceImage(req.user.userId, image);
+
+  res.status(201).json({
+    code: 0,
+    message: 'Image uploaded successfully',
+    data: result,
+  });
+});
+
+/**
  * POST /api/images/generate
  * Generate a new image
  */

@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler';
 import { AppError } from './utils/AppError';
@@ -60,6 +61,9 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Serve uploaded files (for reference images and generated images)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -67,13 +71,15 @@ app.use('/api/prompts', promptRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/memberships', membershipRoutes);
+
+// Payment routes (v1) - mount BEFORE /api/v1 to avoid prefix collision
+app.use('/api/v1/payment', paymentRoutes);
+app.use('/api/v1/payment', paymentCallbackRoutes);
+
+// Admin and announcement routes (v1)
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/admin', reviewRoutes);
 app.use('/api/v1', announcementRoutes);
-
-// Payment routes (v1)
-app.use('/api/v1/payment', paymentRoutes);
-app.use('/api/v1/payment', paymentCallbackRoutes);
 
 // 404 handler
 app.use((req, _res, next) => {
