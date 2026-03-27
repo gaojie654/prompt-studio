@@ -158,8 +158,10 @@ export class SiliconFlowService {
             'SILICONFLOW_RATE_LIMIT'
           );
         }
+        // For 500+ errors, capture the response body to help debug
+        const errorBody = await response.text().catch(() => '(no body)');
         throw new AppError(
-          `SiliconFlow API error: HTTP ${response.status}`,
+          `SiliconFlow API error: HTTP ${response.status} — ${errorBody.substring(0, 300)}`,
           response.status,
           'SILICONFLOW_HTTP_ERROR'
         );

@@ -160,9 +160,9 @@ export default function Workspace() {
     try {
       const token = localStorage.getItem('token')!
 
-      // Upload reference image to get a URL (Kolors I2I needs HTTP URL, not data URI)
-      const refImageUrl = await uploadRefImage(i2i_uploadedImage, token)
-
+      // Pass base64 data URI directly to the API.
+      // The backend forwards it as-is to SiliconFlow's Kolors img2img.
+      // SiliconFlow accepts data URI format for the `image` parameter.
       const platformInfo = PLATFORMS.find(p => p.key === i2i_platform)
       const res = await axios.post(
         `${API_BASE}/images/generate`,
@@ -170,7 +170,7 @@ export default function Workspace() {
           platform: i2i_platform,
           prompt: i2i_prompt,
           negativePrompt: i2i_negative,
-          imageUrl: refImageUrl, // Will be forwarded as `image` param to Kolors
+          imageUrl: i2i_uploadedImage, // base64 data URI — passed directly
         },
         { headers: { Authorization: `Bearer ${token}` } }
       )
