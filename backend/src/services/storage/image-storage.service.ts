@@ -108,8 +108,9 @@ export class StorageService {
     }
 
     // Fetch image using native fetch with timeout via AbortController
+    // Use 120s timeout to accommodate large images from SiliconFlow CDN
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
     let response: Response;
     try {

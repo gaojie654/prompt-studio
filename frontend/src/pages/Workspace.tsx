@@ -527,9 +527,9 @@ export default function Workspace() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <h4 className="font-medium text-yellow-800 mb-2">💡 生成技巧</h4>
             <ul className="text-xs md:text-sm text-yellow-700 space-y-1">
-              <li>• 由 SiliconFlow (Kolors) 提供图像生成能力</li>
-              <li>• 上传清晰的产品图效果更好</li>
-              <li>• 描述越具体，生成效果越符合预期</li>
+              <li>• 由 SiliconFlow (Kolors) 提供图像生成能力，当前为文生图模式</li>
+              <li>• 参考图功能（img2img）暂未开放，请在中提示词里描述你想要的场景</li>
+              <li>• 描述越具体（如"产品放在海边场景，清凉夏日感"），效果越好</li>
               <li>• 使用负面提示词可以避免不想要的元素</li>
               <li>• 可以在快捷模板中选择适合的风格</li>
             </ul>
