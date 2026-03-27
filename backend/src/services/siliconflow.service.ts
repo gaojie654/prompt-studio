@@ -54,15 +54,19 @@ export class SiliconFlowService {
     }
 
     // Build request body for SiliconFlow Kolors API
-    // NOTE: Kolors is a text-to-image model. The imageUrl parameter (reference image)
-    // is NOT supported by Kolors and is silently ignored. For product photography with
-    // a reference image, consider using IP-Adapter or a different img2img-capable model.
+    // Kolors supports img2img via the `image` parameter (URL to reference image).
+    // SiliconFlow API uses `image` (not `image_url`) for img2img.
     const requestBody: Record<string, unknown> = {
       model: this.model,
       prompt: promptText,
       image_size: this.normalizeSize(size),
       n: 1,
     };
+
+    // Add reference image for img2img (Kolors img2img via `image` field)
+    if (imageUrl) {
+      requestBody.image = imageUrl;
+    }
 
     // Add negative prompt if provided
     if (negativePrompt) {
