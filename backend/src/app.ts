@@ -30,6 +30,11 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      'img-src': ['*', 'data:', 'blob:'],
+    },
+  },
 }));
 app.use(cors({
   origin: config.corsOrigin,
