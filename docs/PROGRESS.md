@@ -1,6 +1,6 @@
 # 📊 Prompt Studio 开发进度表
 
-> 最后更新: 2026-03-25
+> 最后更新: 2026-03-27
 
 ---
 
@@ -227,8 +227,11 @@
 - [x] 用户余额/会员系统后端已完成
 - [x] 微信/支付宝支付后端已完成（需配置商户号和密钥）
 - [x] 前端支付流程UI（充值/月卡/年卡购买页面）已完成
-- [x] SiliconFlow API Key 已配置（sk-elpf...）
+- [x] SiliconFlow API Key 已配置
 - [x] **TypeScript编译错误修复**：前后端所有TypeScript编译错误已修复，前后端均可成功build
+- [x] **参考图生图不生效**：原因为 Kolors 是 T2I 模型，`image` 参数不生效；已改用 Qwen/Qwen-Image-Edit（真正的 I2I 模型）✅
+- [x] **图片预览空白**：原因是 CSP 拦截 localhost 图片 + 下载超时；已修复 CSP + 超时改为 120s ✅
+- [x] **下载为链接而非文件**：已改为 API 接口返回文件流 ✅
 
 ---
 
@@ -353,6 +356,11 @@
 | 2026-03-25 | 公告管理系统：Prisma Announcement模型、后端公告服务+路由+Admin UI公告管理页面+前端弹窗展示 | Subagent |
 | 2026-03-25 | SiliconFlow (Kolors) 图像生成API接入：配置、服务创建、图片服务集成、前端UI更新 | Subagent |
 | 2026-03-26 | M4上线准备：生产环境配置(Dockerfile前后端/nginx/docker-compose)、CI/CD(GitHub Actions deploy.yml监听develop/main分支)、部署脚本(scripts/deploy.sh)、Nginx反向代理配置、README部署文档 | Subagent |
+| 2026-03-27 | 工作台重构为4 Tab结构（T2I Kolors / I2I Qwen / T2V Wan2.2 / I2V Wan2.2 即将上线） | 虾宝1号 |
+| 2026-03-27 | 修复 Kolors img2img 不生效问题：改为 Qwen/Qwen-Image-Edit（真正的 I2I 模型） | 虾宝1号 |
+| 2026-03-27 | 实现双模式下载：水印免费 / 无水印 PRO免费或20积分扣除，sharp 水印处理 | 虾宝1号 |
+| 2026-03-27 | 开发环境禁用频限（避免 429），修复 CSP 拦截 localhost 图片问题 | 虾宝1号 |
+| 2026-03-27 | base64 data URI 直接传给 SiliconFlow（绕过 localhost URL 不可达问题） | 虾宝1号 |
 
 ---
 
@@ -367,6 +375,16 @@
 - ✅ 骨架屏加载状态
 - ✅ 负面提示词输入
 - ✅ 快捷模板选择
+- ✅ **4 Tab 工作台架构**（2026-03-27）
+  - 🎨 Tab1: 文字生图片 (Kwai-Kolors/Kolors)
+  - 🖼️ Tab2: 参考图生图片 (Qwen/Qwen-Image-Edit, 真正的 I2I 模型)
+  - 🎬 Tab3: 文字生视频 (Wan-AI/Wan2.2-T2V-A14B, 即将上线)
+  - 🎥 Tab4: 图+文生视频 (即将上线)
+- ✅ **双模式下载体系**（2026-03-27）
+  - 有水印图片: 免费下载
+  - 无水印图片: PRO 会员免费 / 非 PRO 需 20 积分扣除
+  - API 下载接口 (`GET /api/images/:id/download?removeWatermark=true`)
+  - sharp 水印处理（右下角 PromptStudio.ai 半透明文字水印）
 
 ### 提示词库 (Prompts)
 - ✅ 搜索（带防抖）
