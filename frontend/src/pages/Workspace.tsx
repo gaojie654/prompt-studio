@@ -188,14 +188,47 @@ export default function Workspace() {
     }
   }
 
-  const handleDownload = (img: GeneratedImage) => {
-    const link = document.createElement('a')
-    link.href = img.url
-    link.download = `prompt-studio-${img.platform}-${Date.now()}.png`
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  const handleDownload = async (img: GeneratedImage, removeWatermark: boolean = false) => {
+    try {
+      const token = localStorage.getItem('token')
+      const params = removeWatermark ? '?removeWatermark=true' : ''
+      const response = await fetch(`${API_BASE}/images/${img.id}/download${params}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: '下载失败' }))
+        alert(err.message || '下载失败，请重试')
+        return
+      }
+
+      // Extract filename from Content-Disposition header, fallback to default
+      const contentDisposition = response.headers.get('Content-Disposition') || ''
+      const filenameMatch = contentDisposition.match(/filename="?(.+?)"?$/i)
+      const filename = filenameMatch
+        ? decodeURIComponent(filenameMatch[1])
+        : `prompt-studio-${img.platform}-${Date.now()}.png`
+
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
+
+      if (removeWatermark) {
+        alert('无水印图片下载成功，已扣除 20 积分')
+      }
+    } catch (err) {
+      console.error('Download error:', err)
+      alert('下载失败，请重试')
+    }
   }
 
   const handleCopyLink = (img: GeneratedImage) => {
@@ -504,16 +537,17 @@ export default function Workspace() {
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleDownload(img)}
+                        onClick={() => handleDownload(img, false)}
                         className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm"
                       >
-                        ⬇️ 下载图片
+                        ⬇️ 下载有水印图
                       </button>
                       <button
-                        onClick={() => handleCopyLink(img)}
-                        className="px-4 py-2 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors border text-sm"
+                        onClick={() => handleDownload(img, true)}
+                        className="flex-1 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors text-sm"
+                        title="需20积分"
                       >
-                        复制链接
+                        ⬇️ 无水印下载 (20积分)
                       </button>
                     </div>
                   </div>

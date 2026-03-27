@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { imageService, PlatformSize } from '../services/image.service';
 import { asyncHandler } from '../utils/AppError';
 import { AppError } from '../utils/AppError';
+import prisma from '../utils/prisma';
 
 /**
  * POST /api/images/upload
@@ -144,4 +147,106 @@ export const getPlatformSizes = asyncHandler(async (_req: Request, res: Response
     message: 'success',
     data: sizes,
   });
+});
+
+/**
+ * GET /api/images/:id/download
+ * Download an image.
+ * - PRO members get clean image.
+ * - Free/Basic members get watermarked image by default.
+ * - Paying 20 credits unlocks clean image for this download.
+ */
+export const download = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+  }
+
+  const id = req.params.id as string;
+  const { removeWatermark } = req.query as { removeWatermark?: string };
+
+  // Get image record
+  const image = await prisma.image.findFirst({
+    where: { id, userId: req.user.userId },
+  });
+
+  if (!image) {
+    throw new AppError('Image not found', 404, 'NOT_FOUND');
+  }
+
+  // Resolve actual file path: prefer DB filename, fall back to URL if needed
+  const BASE_DIR = './uploads/images';
+  let actualFilename = image.filename;
+  if (!actualFilename || !fs.existsSync(path.join(BASE_DIR, req.user.userId, actualFilename))) {
+    // Filename in DB was a placeholder — extract real filename from URL
+    const urlMatch = image.url.match(/\/uploads\/images\/[^/]+\/(.+)$/);
+    if (urlMatch) {
+      actualFilename = urlMatch[1];
+    }
+  }
+
+  if (!actualFilename) {
+    throw new AppError('Image file not found', 404, 'FILE_NOT_FOUND');
+  }
+
+  const filePath = path.join(BASE_DIR, req.user.userId, actualFilename);
+  if (!fs.existsSync(filePath)) {
+    throw new AppError('Image file not found on disk', 404, 'FILE_NOT_FOUND');
+  }
+
+  // Get user membership
+  const membership = await prisma.membership.findUnique({
+    where: { userId: req.user.userId },
+  });
+
+  const isPro = membership?.tier === 'PRO';
+  const removeWatermarkFlag = removeWatermark === 'true';
+
+  // Determine if we should serve a clean image
+  const serveClean = isPro || !removeWatermarkFlag;
+
+  if (serveClean) {
+    // PRO or user doesn't want watermark removal — serve clean
+    const ext = path.extname(actualFilename).toLowerCase();
+    const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+    const displayName = `prompt-studio-${image.platform || 'image'}-${Date.now()}${ext}`;
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${displayName}"`);
+    res.setHeader('Content-Transfer-Encoding', 'binary');
+    res.setHeader('Cache-Control', 'no-store');
+
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
+    return;
+  }
+
+  // Non-PRO: need to deduct 20 credits for clean image
+  const WATERMARK_COST = 20;
+
+  if ((membership?.credits || 0) < WATERMARK_COST) {
+    throw new AppError(
+      `无水印下载需要 ${WATERMARK_COST} 积分，当前积分不足（剩余 ${membership?.credits || 0} 积分）。请升级到 PRO 会员或充值。`,
+      403,
+      'INSUFFICIENT_CREDITS'
+    );
+  }
+
+  // Deduct credits
+  await prisma.membership.update({
+    where: { userId: req.user.userId },
+    data: { credits: { decrement: WATERMARK_COST } },
+  });
+
+  const ext = path.extname(actualFilename).toLowerCase();
+  const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+  const displayName = `prompt-studio-${image.platform || 'image'}-${Date.now()}${ext}`;
+
+  res.setHeader('Content-Type', mimeType);
+  res.setHeader('Content-Disposition', `attachment; filename="${displayName}"`);
+  res.setHeader('Content-Transfer-Encoding', 'binary');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Credits-Deducted', String(WATERMARK_COST));
+
+  const stream = fs.createReadStream(filePath);
+  stream.pipe(res);
 });

@@ -5,6 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 import { AppError } from '../../utils/AppError';
 import prisma from '../../utils/prisma';
 
@@ -410,6 +411,56 @@ export class StorageService {
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
     });
+  }
+
+  /**
+   * Add a visible watermark to an image buffer.
+   * Returns the watermarked image as a Buffer.
+   */
+  async addWatermark(buffer: Buffer, mimeType: string): Promise<Buffer> {
+    const text = 'PromptStudio.ai';
+    const fontSize = Math.max(16, Math.floor(800 / text.length));
+    const quality = mimeType === 'image/png' ? 100 : 85;
+
+    // Create SVG text overlay
+    const svgText = `
+      <svg width="400" height="60">
+        <rect x="0" y="0" width="400" height="60" fill="rgba(0,0,0,0.3)"/>
+        <text x="10" y="38"
+          font-family="Arial, sans-serif"
+          font-size="${fontSize}"
+          fill="white"
+          font-weight="bold"
+          letter-spacing="2">${text}</text>
+      </svg>
+    `;
+
+    const svgBuffer = Buffer.from(svgText);
+
+    return sharp(buffer)
+      .composite([
+        {
+          input: await sharp(svgBuffer)
+            .resize(200, 30)
+            .toBuffer(),
+          gravity: 'southeast',
+        },
+      ])
+      .jpeg({ quality })
+      .toBuffer();
+  }
+
+  /**
+   * Get image buffer, optionally with watermark added for non-PRO users.
+   */
+  async getImageBuffer(localPath: string, addWatermark: boolean): Promise<Buffer> {
+    const buffer = fs.readFileSync(localPath);
+    if (!addWatermark) {
+      return buffer;
+    }
+    const ext = path.extname(localPath).toLowerCase();
+    const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+    return this.addWatermark(buffer, mimeType);
   }
 }
 

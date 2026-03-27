@@ -186,20 +186,26 @@ export class ImageService {
 
       // Update image record with the generated URL
       let finalUrl = imageUrlResult;
+      let savedFilename: string | null = null;
 
       // Persist image to local/OSS storage
       try {
         const savedImage = await storageService.downloadImage(imageUrlResult, userId, image.id);
         finalUrl = savedImage.url;
+        savedFilename = savedImage.filename;
         console.info(`[ImageService] Image persisted: ${savedImage.filename}`);
       } catch (storageError) {
         // Log but don't fail - we still have the original URL (may expire)
         console.error(`[ImageService] Failed to persist image: ${(storageError as Error).message}`);
       }
 
+      // Update image record
       const updatedImage = await prisma.image.update({
         where: { id: image.id },
-        data: { url: finalUrl },
+        data: {
+          url: finalUrl,
+          ...(savedFilename ? { filename: savedFilename } : {}),
+        },
       });
 
       // Create review record for the generated image
