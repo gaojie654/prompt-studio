@@ -47,6 +47,7 @@ export default function Workspace() {
   const [showTemplates, setShowTemplates] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [generationProgress, setGenerationProgress] = useState(0)
+  const [imageError, setImageError] = useState<string | null>(null)
   const [isPreviewMode, setIsPreviewMode] = useState(false)
   const [previewPlatform, setPreviewPlatform] = useState<string | null>(null)
 
@@ -167,17 +168,17 @@ export default function Workspace() {
       setGenerationProgress(100)
 
       const platformInfo = PLATFORMS.find((p) => p.key === selectedPlatform)
-      setGeneratedImages([
-        {
-          id: response.data.data.id,
-          url: response.data.data.url,
-          platform: platformInfo?.name || selectedPlatform,
-          width: platformInfo?.width || 800,
-          height: platformInfo?.height || 800,
-          status: 'completed',
-          createdAt: new Date().toISOString(),
-        },
-      ])
+      const newImage = {
+        id: response.data.data.id,
+        url: response.data.data.url,
+        platform: platformInfo?.name || selectedPlatform,
+        width: response.data.data.width || platformInfo?.width || 800,
+        height: response.data.data.height || platformInfo?.height || 800,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+      }
+      console.info('[Generate] New image:', JSON.stringify(newImage))
+      setGeneratedImages([newImage])
     } catch (err: any) {
       clearInterval(progressInterval)
       const message = err.response?.data?.message || '生成失败，请重试'
@@ -362,6 +363,13 @@ export default function Workspace() {
             </div>
           )}
 
+          {/* Image Load Error */}
+          {imageError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {imageError}
+            </div>
+          )}
+
           {/* Generate Button */}
           <button
             onClick={handleGenerate}
@@ -463,10 +471,14 @@ export default function Workspace() {
                         src={img.url}
                         alt="Generated"
                         className="w-full rounded-lg"
+                        onError={(e) => {
+                          console.error('[Preview] Image load error:', e.currentTarget.src, e)
+                          setImageError(`图片加载失败: ${e.currentTarget.src}`)
+                        }}
                         style={{
                           aspectRatio: isPreviewMode && previewPlatform
                             ? PLATFORMS.find(p => p.key === previewPlatform)?.aspect || '1/1'
-                            : `${img.width}/${img.height}`
+                            : (img.width && img.height ? `${img.width}/${img.height}` : '1/1')
                         }}
                       />
                       {/* Platform switcher when preview mode is on */}
