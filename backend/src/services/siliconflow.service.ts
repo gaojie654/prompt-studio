@@ -15,7 +15,7 @@ export interface SiliconFlowGenerateParams {
   promptText: string;
   size?: string; // e.g., "1024*1024", "768*1344", "1344*768"
   negativePrompt?: string;
-  imageUrl?: string; // NOTE: Not supported by Kolors (text-to-image only) — kept for future model swap
+  imageUrl?: string; // Reference image for img2img — uses Qwen/Qwen-Image-Edit when provided
 }
 
 export class SiliconFlowService {
@@ -24,12 +24,14 @@ export class SiliconFlowService {
   private readonly model: string;
   private readonly timeout: number;
   private readonly retryAttempts: number;
+  private readonly t2iModel = 'Kwai-Kolors/Kolors';
+  private readonly i2iModel = 'Qwen/Qwen-Image-Edit';
 
   constructor() {
     const { apiKey, baseUrl, model, timeout, retryAttempts } = config.siliconflow;
     this.apiKey = apiKey || '';
     this.baseUrl = baseUrl || 'https://api.siliconflow.cn/v1';
-    this.model = model || 'Kolors';
+    this.model = model || 'Kwai-Kolors/Kolors';
     this.timeout = timeout || 120000;
     this.retryAttempts = retryAttempts || 2;
   }
@@ -39,7 +41,9 @@ export class SiliconFlowService {
   }
 
   /**
-   * Generate an image using SiliconFlow Kolors API
+   * Generate an image using SiliconFlow API
+   * - T2I: uses Kwai-Kolors/Kolors (text-to-image)
+   * - I2I: uses Qwen/Qwen-Image-Edit (image-to-image)
    * POST https://api.siliconflow.cn/v1/images/generations
    */
   async generateImage(params: SiliconFlowGenerateParams): Promise<string> {
@@ -53,17 +57,19 @@ export class SiliconFlowService {
       );
     }
 
-    // Build request body for SiliconFlow Kolors API
-    // Kolors supports img2img via the `image` parameter (URL to reference image).
-    // SiliconFlow API uses `image` (not `image_url`) for img2img.
+    // Use different model depending on whether a reference image is provided
+    const isI2I = !!imageUrl;
+    const activeModel = isI2I ? this.i2iModel : this.t2iModel;
+
+    // Build request body
     const requestBody: Record<string, unknown> = {
-      model: this.model,
+      model: activeModel,
       prompt: promptText,
       image_size: this.normalizeSize(size),
       n: 1,
     };
 
-    // Add reference image for img2img (Kolors img2img via `image` field)
+    // Add reference image for img2img
     if (imageUrl) {
       requestBody.image = imageUrl;
     }
