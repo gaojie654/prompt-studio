@@ -29,6 +29,16 @@ export default function Layout() {
     fetchPopupAnnouncement()
   }, [])
 
+  // Close popup on Escape key
+  useEffect(() => {
+    if (!popupAnnouncement) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dismissAnnouncement()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [popupAnnouncement])
+
   const fetchPopupAnnouncement = async () => {
     try {
       const response = await axios.get(`${API_BASE}/v1/announcements`)
@@ -316,21 +326,31 @@ export default function Layout() {
 
       {/* Popup Announcement */}
       {popupAnnouncement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            // Close when clicking the backdrop (outside the modal box)
+            if (e.target === e.currentTarget) {
+              dismissAnnouncement()
+            }
+          }}
+        >
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
             <div className="bg-indigo-600 px-4 py-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-semibold">📢 {popupAnnouncement.title}</h3>
+                <h3 className="text-white font-semibold">📢 {popupAnnouncement.title ?? '公告'}</h3>
                 <button
                   onClick={dismissAnnouncement}
-                  className="text-white hover:text-indigo-200 transition-colors"
+                  className="text-white hover:text-indigo-200 transition-colors text-xl leading-none"
                 >
                   ×
                 </button>
               </div>
             </div>
             <div className="p-4">
-              <p className="text-gray-700 whitespace-pre-wrap">{popupAnnouncement.content}</p>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {popupAnnouncement.content ?? ''}
+              </p>
             </div>
             <div className="px-4 pb-4">
               <button
