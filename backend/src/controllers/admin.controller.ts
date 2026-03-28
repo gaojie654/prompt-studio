@@ -73,6 +73,22 @@ const toggleFeaturedSchema = z.object({
   body: z.object({}),
 });
 
+const addPromptImageSchema = z.object({
+  params: z.object({
+    id: z.string(),
+  }),
+  body: z.object({
+    image: z.string().min(1, 'Image data is required'),
+  }),
+});
+
+const deletePromptImageSchema = z.object({
+  params: z.object({
+    imageId: z.string(),
+  }),
+  body: z.object({}),
+});
+
 const toggleUserSchema = z.object({
   params: z.object({
     id: z.string(),
@@ -216,6 +232,33 @@ export const toggleFeatured = [
     const { id } = req._validated!.params as { id: string };
     const result = await adminService.toggleFeatured(id);
     successResponse(res, result);
+  }),
+];
+
+/**
+ * POST /api/v1/admin/prompts/:id/images
+ * Add an image to a prompt
+ */
+export const addPromptImage = [
+  validate(addPromptImageSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req._validated!.params as { id: string };
+    const { image } = req._validated!.body as { image: string };
+    const result = await adminService.addPromptImage(id, image);
+    successResponse(res, result, 'Image added successfully');
+  }),
+];
+
+/**
+ * DELETE /api/v1/admin/prompts/images/:imageId
+ * Delete an image from a prompt
+ */
+export const deletePromptImage = [
+  validate(deletePromptImageSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { imageId } = req._validated!.params as { imageId: string };
+    await adminService.deletePromptImage(imageId);
+    successResponse(res, null, 'Image deleted successfully');
   }),
 ];
 

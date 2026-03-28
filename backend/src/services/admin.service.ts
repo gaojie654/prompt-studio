@@ -407,7 +407,7 @@ export const listPrompts = async (
           select: { email: true },
         },
         images: {
-          select: { url: true },
+          select: { id: true, url: true },
           take: 5,
         },
       },
@@ -536,6 +536,49 @@ export const toggleFeatured = async (promptId: string): Promise<{ isFeatured: bo
   });
 
   return { isFeatured: updated.isFeatured };
+};
+
+/**
+ * Add an image to a prompt
+ */
+export const addPromptImage = async (promptId: string, imageData: string): Promise<any> => {
+  const prompt = await prisma.prompt.findUnique({
+    where: { id: promptId },
+  });
+
+  if (!prompt) {
+    throw new AppError('Prompt not found', 404, 'PROMPT_NOT_FOUND');
+  }
+
+  // Create image linked to the prompt
+  // Use a placeholder userId since this is an admin operation
+  // The image will be associated with the prompt via promptId
+  const image = await prisma.image.create({
+    data: {
+      url: imageData, // base64 data URI
+      userId: prompt.authorId || 'system',
+      promptId: promptId,
+    },
+  });
+
+  return image;
+};
+
+/**
+ * Delete an image from a prompt
+ */
+export const deletePromptImage = async (imageId: string): Promise<void> => {
+  const image = await prisma.image.findUnique({
+    where: { id: imageId },
+  });
+
+  if (!image) {
+    throw new AppError('Image not found', 404, 'IMAGE_NOT_FOUND');
+  }
+
+  await prisma.image.delete({
+    where: { id: imageId },
+  });
 };
 
 /**

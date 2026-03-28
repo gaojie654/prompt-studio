@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+
+interface ImageItem {
+  id: string
+  url: string
+}
 
 interface Prompt {
   id: string
@@ -16,17 +21,17 @@ interface Prompt {
   viewCount: number
   likeCount: number
   useCount: number
-  authorEmail: string
+  authorId: string
+  authorEmail: string | null
   createdAt: string
-  images: { url: string }[]
+  images: { url: string; id: string }[]
 }
 
-const categories = ['全部', 'ecommerce', 'social', 'media']
+const categories = ['ecommerce', 'social', 'media']
 
 export default function PromptManagement() {
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('全部')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
@@ -34,7 +39,18 @@ export default function PromptManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    description: '',
+    category: 'ecommerce',
+    tags: '',
+    isPublic: false,
+    price: 0,
+  })
+  const [editingImages, setEditingImages] = useState<ImageItem[]>([])
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const pageSize = 10
 
   const fetchPrompts = async () => {
@@ -46,7 +62,6 @@ export default function PromptManagement() {
         limit: String(pageSize),
       })
       if (search) params.append('search', search)
-      if (categoryFilter !== '全部') params.append('category', categoryFilter)
 
       const response = await axios.get(`${API_BASE}/v1/admin/prompts?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -64,7 +79,7 @@ export default function PromptManagement() {
 
   useEffect(() => {
     fetchPrompts()
-  }, [currentPage, categoryFilter])
+  }, [currentPage])
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -92,9 +107,7 @@ export default function PromptManagement() {
           headers: { Authorization: `Bearer ${token}` },
         })
       }
-      setIsModalOpen(false)
-      setEditingPrompt(null)
-      setFormData({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
+      closeModal()
       fetchPrompts()
     } catch (err) {
       console.error('Failed to save prompt')
@@ -112,7 +125,15 @@ export default function PromptManagement() {
       isPublic: prompt.isPublic,
       price: prompt.price,
     })
+    setEditingImages(prompt.images || [])
     setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setEditingPrompt(null)
+    setEditingImages([])
+    setFormData({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
   }
 
   const handleDelete = async (id: string) => {
@@ -142,6 +163,51 @@ export default function PromptManagement() {
     }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !editingPrompt) return
+
+    setUploadingImages(true)
+    try {
+      const token = localStorage.getItem('adminToken')
+      for (const file of Array.from(files)) {
+        const reader = new FileReader()
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+
+        const response = await axios.post(
+          `${API_BASE}/v1/admin/prompts/${editingPrompt.id}/images`,
+          { image: base64 },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        const newImage = response.data.data
+        setEditingImages((prev) => [...prev, { id: newImage.id, url: newImage.url }])
+      }
+      fetchPrompts()
+    } catch (err) {
+      console.error('Failed to upload image', err)
+    } finally {
+      setUploadingImages(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteImage = async (imageId: string) => {
+    try {
+      const token = localStorage.getItem('adminToken')
+      await axios.delete(`${API_BASE}/v1/admin/prompts/images/${imageId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setEditingImages((prev) => prev.filter((img) => img.id !== imageId))
+      fetchPrompts()
+    } catch (err) {
+      console.error('Failed to delete image', err)
+    }
+  }
+
   const categoryLabel = (cat: string | null) => {
     switch (cat) {
       case 'ecommerce': return '电商'
@@ -155,7 +221,7 @@ export default function PromptManagement() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-800">提示词管理</h2>
 
-      {/* 搜索和操作 */}
+      {/* Search and Add */}
       <div className="flex gap-4 items-center flex-wrap">
         <input
           type="text"
@@ -164,23 +230,10 @@ export default function PromptManagement() {
           onChange={(e) => setSearch(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <select
-          value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value)
-            setCurrentPage(1)
-          }}
-          className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c === '全部' ? '全部分类' : categoryLabel(c)}
-            </option>
-          ))}
-        </select>
         <button
           onClick={() => {
             setEditingPrompt(null)
+            setEditingImages([])
             setFormData({ title: '', content: '', description: '', category: 'ecommerce', tags: '', isPublic: false, price: 0 })
             setIsModalOpen(true)
           }}
@@ -190,7 +243,7 @@ export default function PromptManagement() {
         </button>
       </div>
 
-      {/* 表格 */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
@@ -227,7 +280,7 @@ export default function PromptManagement() {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-900 font-medium">{prompt.title}</td>
+                  <td className="px-4 py-3 text-gray-900 font-medium max-w-[200px] truncate">{prompt.title}</td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
                       {categoryLabel(prompt.category)}
@@ -292,7 +345,7 @@ export default function PromptManagement() {
         </table>
       </div>
 
-      {/* 分页 */}
+      {/* Pagination */}
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">共 {total} 条记录</span>
         <div className="flex gap-2">
@@ -319,7 +372,7 @@ export default function PromptManagement() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-auto py-8">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 mx-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">
               {editingPrompt ? '编辑提示词' : '添加提示词'}
             </h3>
@@ -362,9 +415,9 @@ export default function PromptManagement() {
                     onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="ecommerce">电商</option>
-                    <option value="social">社交</option>
-                    <option value="media">媒体</option>
+                    {categories.map((c) => (
+                      <option key={c} value={c}>{categoryLabel(c)}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -387,13 +440,56 @@ export default function PromptManagement() {
                 />
                 <label htmlFor="isPublic" className="text-sm text-gray-600">公开可见</label>
               </div>
+
+              {/* Image Management (only when editing) */}
+              {editingPrompt && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-2">图片</label>
+
+                  {/* Existing Images */}
+                  {editingImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {editingImages.map((img) => (
+                        <div key={img.id} className="relative group">
+                          <img
+                            src={img.url}
+                            alt=""
+                            className="w-20 h-20 object-cover rounded border"
+                          />
+                          <button
+                            onClick={() => handleDeleteImage(img.id)}
+                            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload Button */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImages}
+                    className="px-4 py-2 border border-dashed border-gray-400 rounded-lg text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors disabled:opacity-50"
+                  >
+                    {uploadingImages ? '上传中...' : '+ 上传图片'}
+                  </button>
+                </div>
+              )}
             </div>
+
             <div className="flex justify-end gap-2 mt-6">
               <button
-                onClick={() => {
-                  setIsModalOpen(false)
-                  setEditingPrompt(null)
-                }}
+                onClick={closeModal}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50 transition-colors"
               >
                 取消

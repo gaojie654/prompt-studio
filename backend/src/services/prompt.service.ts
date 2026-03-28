@@ -69,6 +69,7 @@ export class PromptService {
     const prompt = await prisma.prompt.findUnique({
       where: { id },
       include: {
+        images: true,
         author: {
           select: {
             id: true,
@@ -133,6 +134,7 @@ export class PromptService {
         take: pageSize,
         orderBy: { createdAt: 'desc' },
         include: {
+          images: true,
           author: {
             select: {
               id: true,

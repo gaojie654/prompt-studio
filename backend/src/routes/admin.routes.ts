@@ -28,6 +28,8 @@ router.post('/prompts', adminController.createPrompt);
 router.put('/prompts/:id', adminController.updatePrompt);
 router.delete('/prompts/:id', adminController.deletePrompt);
 router.put('/prompts/:id/featured', adminController.toggleFeatured);
+router.post('/prompts/:id/images', adminController.addPromptImage);
+router.delete('/prompts/images/:imageId', adminController.deletePromptImage);
 
 // System settings
 router.get('/settings', adminController.getSettings);
