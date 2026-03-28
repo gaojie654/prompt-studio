@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
 import * as adminController from '../controllers/admin.controller';
+import opennanaCrawlerRoutes from './opennana-crawler.routes';
 
 const router: Router = Router();
 
@@ -31,5 +32,8 @@ router.put('/prompts/:id/featured', adminController.toggleFeatured);
 // System settings
 router.get('/settings', adminController.getSettings);
 router.put('/settings', adminController.updateSettings);
+
+// Crawler routes
+router.use('/crawl', opennanaCrawlerRoutes);
 
 export default router;

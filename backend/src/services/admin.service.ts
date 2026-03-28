@@ -406,6 +406,10 @@ export const listPrompts = async (
         author: {
           select: { email: true },
         },
+        images: {
+          select: { url: true },
+          take: 5,
+        },
       },
     }),
     prisma.prompt.count(),
@@ -418,6 +422,7 @@ export const listPrompts = async (
       content: p.content,
       description: p.description,
       category: p.category,
+      promptType: (p.category && (p.category.includes('Video') || p.category.includes('视频'))) ? '视频' : '图片',
       tags: p.tags,
       isPublic: p.isPublic,
       isFeatured: p.isFeatured,
@@ -426,7 +431,8 @@ export const listPrompts = async (
       likeCount: p.likeCount,
       useCount: p.useCount,
       authorId: p.authorId,
-      authorEmail: p.author.email,
+      authorEmail: p.author?.email ?? null,
+      images: p.images,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     })),

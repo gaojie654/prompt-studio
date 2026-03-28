@@ -80,6 +80,7 @@ model Prompt {
   title       String
   content     String   @db.Text
   description String?  @db.Text
+  contentZh   String?  @db.Text  // Original Chinese prompt text (if English is stored in content)
   category    String?
   tags        String[]
   isPublic    Boolean  @default(false)
@@ -88,8 +89,9 @@ model Prompt {
   likeCount   Int      @default(0)
   useCount    Int      @default(0)
   price       Float    @default(0)
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  source      String?              // 'opennana' | 'user' | 'seed' | etc.
+  authorId    String?
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   images      Image[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

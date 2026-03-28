@@ -18,6 +18,7 @@ interface Prompt {
   useCount: number
   authorEmail: string
   createdAt: string
+  images: { url: string }[]
 }
 
 const categories = ['全部', 'ecommerce', 'social', 'media']
@@ -194,6 +195,7 @@ export default function PromptManagement() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-4 py-3 text-left text-gray-600 font-medium">封面</th>
               <th className="px-4 py-3 text-left text-gray-600 font-medium">标题</th>
               <th className="px-4 py-3 text-left text-gray-600 font-medium">分类</th>
               <th className="px-4 py-3 text-left text-gray-600 font-medium">使用次数</th>
@@ -205,15 +207,26 @@ export default function PromptManagement() {
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">加载中...</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">加载中...</td>
               </tr>
             ) : prompts.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">暂无提示词</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">暂无提示词</td>
               </tr>
             ) : (
               prompts.map((prompt) => (
                 <tr key={prompt.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    {prompt.images && prompt.images.length > 0 ? (
+                      <img
+                        src={prompt.images[0].url}
+                        alt={prompt.title}
+                        className="w-[60px] h-[60px] object-cover rounded"
+                      />
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-gray-900 font-medium">{prompt.title}</td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">

@@ -19,6 +19,7 @@ import Settings from './pages/admin/Settings'
 import AdminLogin from './pages/admin/Login'
 import ReviewManagement from './pages/admin/ReviewManagement'
 import AnnouncementManagement from './pages/admin/AnnouncementManagement'
+import CrawlerManagement from './pages/admin/CrawlerManagement'
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
         <Route path="users" element={<UserManagement />} />
         <Route path="orders" element={<OrderManagement />} />
         <Route path="prompts" element={<PromptManagement />} />
+        <Route path="crawler" element={<CrawlerManagement />} />
         <Route path="reviews" element={<ReviewManagement />} />
         <Route path="announcements" element={<AnnouncementManagement />} />
         <Route path="statistics" element={<Statistics />} />
