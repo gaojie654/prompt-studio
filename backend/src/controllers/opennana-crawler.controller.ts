@@ -10,7 +10,9 @@ export const startCrawl = async (req: Request, res: Response) => {
     return res.status(409).json({ message: 'Crawler is already running', status: 'running' });
   }
 
-  const total = typeof req.body?.total === 'number' ? req.body.total : undefined;
+  const rawTotal = req.body?.total;
+  const total = typeof rawTotal === 'number' && !isNaN(rawTotal) && rawTotal > 0 ? Math.floor(rawTotal) : undefined;
+  console.info('[Crawler] rawTotal:', rawTotal, '→ total:', total);
 
   // Run crawler in background (don't await)
   crawlOpennana(total).catch((err) => {

@@ -47,12 +47,13 @@ export default function CrawlerManagement() {
     try {
       const token = localStorage.getItem('adminToken')
       const body = total ? { total: parseInt(total, 10) } : {}
+      console.info('[Crawler] total input value:', total, 'body:', JSON.stringify(body))
       await axios.post(`${API_BASE}/v1/admin/crawl/opennana`, body, {
         headers: { Authorization: `Bearer ${token}` },
       })
       await fetchStatus()
     } catch (err) {
-      console.error('Failed to start crawler')
+      console.error('Failed to start crawler', err)
     } finally {
       setLoading(false)
     }
@@ -114,8 +115,7 @@ export default function CrawlerManagement() {
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-600">爬取数量：</label>
             <input
-              type="number"
-              min="1"
+              type="text"
               placeholder="留空则爬完全部"
               value={total}
               onChange={(e) => setTotal(e.target.value)}
