@@ -27,7 +27,7 @@ interface Prompt {
   images: { url: string; id: string }[]
 }
 
-const categories = ['ecommerce', 'social', 'media']
+const categories = ['ecommerce', 'social', 'media', 'Seedance 2.0', 'Nano Banana Pro']
 
 export default function PromptManagement() {
   const [prompts, setPrompts] = useState<Prompt[]>([])
