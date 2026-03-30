@@ -3,18 +3,21 @@ import { crawlOpennana } from '../services/opennana-crawler.service';
 import { getCrawlStatus } from '../services/crawl-status.service';
 
 // POST /api/v1/admin/crawl/opennana
-export const startCrawl = async (_req: Request, res: Response) => {
+// Body: { total?: number } — 留空则爬完全部
+export const startCrawl = async (req: Request, res: Response) => {
   const status = getCrawlStatus();
   if (status.running) {
     return res.status(409).json({ message: 'Crawler is already running', status: 'running' });
   }
 
+  const total = typeof req.body?.total === 'number' ? req.body.total : undefined;
+
   // Run crawler in background (don't await)
-  crawlOpennana().catch((err) => {
+  crawlOpennana(total).catch((err) => {
     console.error('Crawler error:', err);
   });
 
-  return res.json({ message: 'OpenNana crawler started', status: 'started' });
+  return res.json({ message: 'OpenNana crawler started', status: 'started', total });
 };
 
 // GET /api/v1/admin/crawl/opennana/status

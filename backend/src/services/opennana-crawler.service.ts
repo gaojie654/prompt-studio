@@ -361,7 +361,7 @@ async function seedPrompt(
 }
 
 // ── Main crawl loop ───────────────────────────────────────
-export async function crawlOpennana(): Promise<void> {
+export async function crawlOpennana(maxTotal?: number): Promise<void> {
   // Ensure uploads dir
   if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -387,7 +387,11 @@ export async function crawlOpennana(): Promise<void> {
   };
 
   try {
-    const urls = await getPromptUrls();
+    let urls = await getPromptUrls();
+    if (maxTotal && maxTotal > 0) {
+      urls = urls.slice(0, maxTotal);
+      addLog(`Limiting to first ${maxTotal} URLs`);
+    }
     addLog(`Found ${urls.length} prompt URLs`);
 
     setCrawlStatus({ ...getCrawlStatus(), total: urls.length });

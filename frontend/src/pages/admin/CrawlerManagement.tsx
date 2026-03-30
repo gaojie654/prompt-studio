@@ -28,6 +28,7 @@ export default function CrawlerManagement() {
     logs: [],
   })
   const [loading, setLoading] = useState(false)
+  const [total, setTotal] = useState<string>('')
 
   const fetchStatus = async () => {
     try {
@@ -45,7 +46,8 @@ export default function CrawlerManagement() {
     setLoading(true)
     try {
       const token = localStorage.getItem('adminToken')
-      await axios.post(`${API_BASE}/v1/admin/crawl/opennana`, {}, {
+      const body = total ? { total: parseInt(total, 10) } : {}
+      await axios.post(`${API_BASE}/v1/admin/crawl/opennana`, body, {
         headers: { Authorization: `Bearer ${token}` },
       })
       await fetchStatus()
@@ -107,7 +109,20 @@ export default function CrawlerManagement() {
           </div>
         </div>
 
+        {/* 数量输入 + 启动按钮 */}
         <div className="mt-6 flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-600">爬取数量：</label>
+            <input
+              type="number"
+              min="1"
+              placeholder="留空则爬完全部"
+              value={total}
+              onChange={(e) => setTotal(e.target.value)}
+              disabled={loading || status.running}
+              className="w-36 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            />
+          </div>
           <button
             onClick={startCrawler}
             disabled={loading || status.running}
