@@ -90,6 +90,7 @@ model Prompt {
   useCount    Int      @default(0)
   price       Float    @default(0)
   source      String?              // 'opennana' | 'user' | 'seed' | etc.
+  sourceUrl   String?
   authorId    String?
   author      User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   images      Image[]

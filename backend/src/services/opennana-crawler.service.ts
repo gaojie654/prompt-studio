@@ -305,6 +305,8 @@ async function scrapePrompt(url: string): Promise<ExtractedPrompt | null> {
   }
 }
 
+const ADMIN_USER_ID = 'cmn8aznxx0000qkdgyf36e0sp';
+
 // ── Seed prompt to DB ──────────────────────────────────────
 async function seedPrompt(
   data: ExtractedPrompt | null,
@@ -320,8 +322,9 @@ async function seedPrompt(
   const existing = await prisma.prompt.findFirst({ where: { title: data.title } });
   if (existing) return 'skip-dup';
 
+  let localImagePath = '';
   if (data.coverImage) {
-    await downloadCover(data.coverImage, data.slug);
+    localImagePath = await downloadCover(data.coverImage, data.slug);
   }
 
   const tags = [
@@ -329,7 +332,7 @@ async function seedPrompt(
     ...data.tags.filter((t) => t.length > 1 && t.length < 20),
   ];
 
-  await prisma.prompt.create({
+  const prompt = await prisma.prompt.create({
     data: {
       title: data.title,
       content: promptText,
@@ -342,6 +345,17 @@ async function seedPrompt(
       authorId: null,
     },
   });
+
+  // Create Image record if cover was downloaded
+  if (localImagePath) {
+    await prisma.image.create({
+      data: {
+        url: localImagePath,
+        userId: ADMIN_USER_ID,
+        promptId: prompt.id,
+      },
+    });
+  }
 
   return 'seeded';
 }
