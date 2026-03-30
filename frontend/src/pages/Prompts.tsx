@@ -27,6 +27,8 @@ const CATEGORIES = [
   { key: 'ecommerce', label: '电商' },
   { key: 'social', label: '社交' },
   { key: 'media', label: '自媒体' },
+  { key: 'Seedance 2.0', label: 'Seedance 2.0' },
+  { key: 'Nano Banana Pro', label: 'Nano Banana Pro' },
 ]
 
 export default function Prompts() {
