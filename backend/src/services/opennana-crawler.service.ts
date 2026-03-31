@@ -258,7 +258,187 @@ async function downloadCover(imageUrl: string, slug: string): Promise<string> {
   }
 }
 
-// ── Sitemap ────────────────────────────────────────────────
+// ── Official OpenNana API (https://api.opennana.com) ────────
+// List endpoint: GET /api/prompts?page=1&limit=20&sort=reviewed_at&order=DESC
+// Detail endpoint: GET /api/prompts/{slug}
+
+interface ApiPromptItem {
+  id: number;
+  slug: string;
+  title: string;
+  media_type: string;
+  cover_image: string;
+}
+
+interface ApiListResponse {
+  status: number;
+  msg: string;
+  data: {
+    items: ApiPromptItem[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+  };
+}
+
+interface ApiPromptDetail {
+  id: number;
+  slug: string;
+  title: string;
+  description: string;
+  source_name: string | null;
+  source_url: string | null;
+  model: string;
+  prompts: { text: string; type: string; label: string }[];
+  images: string[];
+  tags: string[];
+  media_type: string;
+  [key: string]: unknown;
+}
+
+// Fetch paginated list from official API
+async function fetchPromptListPage(page: number): Promise<ApiListResponse | null> {
+  const url = `https://api.opennana.com/api/prompts?page=${page}&limit=20&sort=reviewed_at&order=DESC`;
+  try {
+    const body = await httpGet(url);
+    const parsed = JSON.parse(body);
+    // Safety check: ensure items is always an array
+    if (!Array.isArray(parsed?.data?.items)) {
+      console.error(`[Crawler] Page ${page}: items is not an array, type=${typeof parsed?.data?.items}`);
+      return { status: 0, msg: '', data: { items: [], pagination: { page, limit: 20, total: 0, total_pages: 0, has_more: false } } } as ApiListResponse;
+    }
+    return parsed as ApiListResponse;
+  } catch (e: any) {
+    console.error(`[Crawler] Page ${page} fetch error:`, e.message);
+    return null;
+  }
+}
+
+// Fetch individual prompt detail from official API
+async function fetchPromptDetail(slug: string): Promise<ApiPromptDetail | null> {
+  try {
+    const body = await httpGet(`https://api.opennana.com/api/prompts/${slug}`);
+    const res = JSON.parse(body) as { status: number; data: ApiPromptDetail };
+    if (res.status === 200 && res.data) return res.data;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Get all slugs via official paginated API ───────────────
+async function getAllPromptSlugsFromApi(): Promise<string[]> {
+  const allSlugs: string[] = [];
+  const seen = new Set<string>();
+
+  // First, fetch page 1 to get total pages
+  const first = await fetchPromptListPage(1);
+  if (!first) throw new Error('Failed to fetch first page from OpenNana API');
+
+  const pagination = first.data?.pagination;
+  if (!pagination) {
+    console.error('[Crawler] No pagination in first response');
+    throw new Error('Invalid API response: no pagination');
+  }
+
+  const { total_pages } = pagination;
+  const items: unknown[] = Array.isArray(first.data?.items) ? first.data.items : [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i] as { slug?: string };
+    if (item?.slug && !seen.has(item.slug)) {
+      seen.add(item.slug);
+      allSlugs.push(item.slug);
+    }
+  }
+
+  // Fetch remaining pages
+  for (let page = 2; page <= total_pages; page++) {
+    const data = await fetchPromptListPage(page);
+    const pageItems: unknown[] = Array.isArray(data?.data?.items) ? data.data.items : [];
+    for (let i = 0; i < pageItems.length; i++) {
+      const item = pageItems[i] as { slug?: string };
+      if (item?.slug && !seen.has(item.slug)) {
+        seen.add(item.slug);
+        allSlugs.push(item.slug);
+      }
+    }
+    setCrawlStatus({ ...getCrawlStatus(), total: allSlugs.length });
+    // Small delay between pages
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  return allSlugs;
+}
+
+// ── Scrape a single prompt via official API ────────────────
+// Returns data compatible with the existing ExtractedPrompt interface
+// so that seedPrompt() needs minimal changes.
+export async function scrapePromptByApi(slug: string): Promise<ExtractedPrompt | null> {
+  const detail = await fetchPromptDetail(slug);
+  if (!detail) return null;
+
+  // Extract English prompt (type === 'en')
+  const enPrompt = detail.prompts?.find(p => p.type === 'en');
+  const zhPrompt = detail.prompts?.find(p => p.type === 'zh');
+
+  if (!enPrompt && !zhPrompt) return null;
+
+  const rawContent = enPrompt?.text || zhPrompt?.text || '';
+  if (rawContent.length < 20) return null;
+
+  // Clean JSON if it's a JSON string
+  let contentText = rawContent;
+  try {
+    const parsed = JSON.parse(rawContent);
+    contentText = typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+  } catch { /* not JSON, use as-is */ }
+
+  // Clean Chinese prompt
+  let chinesePromptText = zhPrompt?.text || '';
+  try {
+    const parsed = JSON.parse(chinesePromptText);
+    chinesePromptText = typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2);
+  } catch { /* not JSON */ }
+
+  // Build cover image URL
+  let coverImage = '';
+  const images = detail.images as unknown as string[];
+  if (images && images.length > 0) {
+    let img = String(images[0] || '');
+    if (img.startsWith('pthumbs/')) img = 'https://img.opennana.com/' + img;
+    coverImage = img;
+  } else {
+    const coverImg = (detail as unknown as { cover_image?: string }).cover_image;
+    if (coverImg) {
+      let cover = coverImg.startsWith('pthumbs/') ? 'https://img.opennana.com/' + coverImg : coverImg;
+      coverImage = cover;
+    }
+  }
+
+  return {
+    title: detail.title || slug,
+    slug,
+    englishPrompt: contentText,
+    chinesePrompt: chinesePromptText || '',
+    tags: (detail.tags || []).filter((t: string) => t.length > 1 && t.length < 30),
+    model: detail.model || '',
+    coverImage,
+    sourceUrl: detail.source_url || '',
+  };
+}
+
+// ── Detect total pages from first API page ────────────────
+async function detectTotalPages(): Promise<number> {
+  const data = await fetchPromptListPage(1);
+  return data?.data?.pagination?.total_pages || 166;
+}
+
+// ── Sitemap (legacy fallback) ──────────────────────────────
 async function getPromptUrls(): Promise<string[]> {
   const body = await httpGet('https://opennana.com/sitemap.xml');
   return (body.match(/<loc>(.*?)<\/loc>/g) || [])
@@ -266,6 +446,21 @@ async function getPromptUrls(): Promise<string[]> {
     .filter(
       (u) => u.includes('/awesome-prompt-gallery/') && !u.endsWith('/awesome-prompt-gallery')
     );
+}
+
+// ── Get all prompt URLs (via official API, full 3000+) ───
+async function getPromptUrlsFull(): Promise<string[]> {
+  const addLog = (msg: string) => {
+    const status = getCrawlStatus();
+    status.logs = [...status.logs.slice(-19), `[${new Date().toISOString()}] ${msg}`];
+    setCrawlStatus(status);
+  };
+
+  addLog('Fetching all slugs from OpenNana official API...');
+  const slugs = await getAllPromptSlugsFromApi();
+  addLog(`Found ${slugs.length} prompt slugs`);
+
+  return slugs.map(slug => `https://opennana.com/awesome-prompt-gallery/${slug}`);
 }
 
 // ── Scrape single ─────────────────────────────────────────
@@ -338,7 +533,7 @@ async function seedPrompt(
       content: promptText,
       contentZh: data.chinesePrompt || null,
       category: data.model,
-      tags: [...new Set(tags)].slice(0, 10),
+      tags: Array.from(new Set(tags)).slice(0, 10),
       isPublic: true,
       useCount: Math.floor(Math.random() * 300) + 20,
       source: 'opennana',
@@ -387,12 +582,13 @@ export async function crawlOpennana(maxTotal?: number): Promise<void> {
   };
 
   try {
-    let urls = await getPromptUrls();
+    // Use paginated gallery fetch (3000+ prompts) instead of sitemap (45 prompts)
+    const urls = await getPromptUrlsFull();
     if (maxTotal && maxTotal > 0) {
-      urls = urls.slice(0, maxTotal);
+      urls.splice(maxTotal); // trim to maxTotal
       addLog(`Limiting to first ${maxTotal} URLs`);
     }
-    addLog(`Found ${urls.length} prompt URLs`);
+    addLog(`Total URLs to crawl: ${urls.length}`);
 
     setCrawlStatus({ ...getCrawlStatus(), total: urls.length });
 
@@ -402,7 +598,7 @@ export async function crawlOpennana(maxTotal?: number): Promise<void> {
       setCrawlStatus({ ...getCrawlStatus(), current: slug });
 
       addLog(`[${i + 1}/${urls.length}] Crawling: ${slug}`);
-      const data = await scrapePrompt(url);
+      const data = await scrapePromptByApi(slug);
       const result = await seedPrompt(data, addLog);
 
       const status = getCrawlStatus();

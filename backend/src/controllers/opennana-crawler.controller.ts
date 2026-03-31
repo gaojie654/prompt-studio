@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { crawlOpennana } from '../services/opennana-crawler.service';
+import { crawlOpennana, scrapePromptByApi } from '../services/opennana-crawler.service';
 import { getCrawlStatus } from '../services/crawl-status.service';
 
 // POST /api/v1/admin/crawl/opennana
@@ -25,4 +25,18 @@ export const startCrawl = async (req: Request, res: Response) => {
 // GET /api/v1/admin/crawl/opennana/status
 export const getStatus = (_req: Request, res: Response) => {
   return res.json(getCrawlStatus());
+};
+
+// GET /api/v1/admin/crawl/opennana/test?slug=xxx — debug test
+export const testSlug = async (req: Request, res: Response) => {
+  const { slug } = req.query;
+  if (!slug || typeof slug !== 'string') {
+    return res.status(400).json({ message: 'slug query param required' });
+  }
+  try {
+    const result = await scrapePromptByApi(slug);
+    return res.json({ slug, result });
+  } catch (err: any) {
+    return res.status(500).json({ slug, error: err.message });
+  }
 };
