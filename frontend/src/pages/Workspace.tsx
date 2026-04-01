@@ -108,7 +108,6 @@ export default function Workspace() {
     try {
       const token = localStorage.getItem('token')!
       const payload: any = {
-        platform: platform,
         model: model,
         resolution: resolution,
         prompt: prompt,
@@ -120,9 +119,11 @@ export default function Workspace() {
         payload.imageUrl = uploadedImage
       }
 
-      // Only add aspectRatio for custom platform
+      // For custom platform, use aspectRatio; otherwise use platform preset dimensions
       if (platform === 'custom') {
         payload.aspectRatio = aspectRatio
+      } else {
+        payload.platform = platform
       }
 
       const res = await axios.post(
