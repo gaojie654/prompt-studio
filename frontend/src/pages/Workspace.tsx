@@ -107,17 +107,27 @@ export default function Workspace() {
 
     try {
       const token = localStorage.getItem('token')!
+      const payload: any = {
+        platform: platform,
+        model: model,
+        resolution: resolution,
+        prompt: prompt,
+        negativePrompt: negativePrompt || undefined,
+      }
+
+      // Only add imageUrl for img2img mode
+      if (activeTab === 'img2img' && uploadedImage) {
+        payload.imageUrl = uploadedImage
+      }
+
+      // Only add aspectRatio for custom platform
+      if (platform === 'custom') {
+        payload.aspectRatio = aspectRatio
+      }
+
       const res = await axios.post(
         `${API_BASE}/images/generate`,
-        {
-          platform: platform,
-          model: model,
-          resolution: resolution,
-          aspectRatio: aspectRatio,
-          prompt: prompt,
-          negativePrompt: negativePrompt,
-          imageUrl: uploadedImage,
-        },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       clearInterval(progressTimer)
