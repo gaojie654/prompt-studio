@@ -119,8 +119,9 @@ export default function Workspace() {
         payload.imageUrl = uploadedImage
       }
 
-      // For custom platform, use aspectRatio; otherwise use platform preset dimensions
+      // For custom platform, pass aspectRatio; otherwise use platform preset
       if (platform === 'custom') {
+        payload.platform = 'custom'
         payload.aspectRatio = aspectRatio
       } else {
         payload.platform = platform
