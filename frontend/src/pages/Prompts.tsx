@@ -226,7 +226,8 @@ export default function Prompts() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {/* Masonry Grid - True waterfall layout */}
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
               {prompts.map((prompt) => {
                 const coverUrl = getCoverImage(prompt)
                 const isFav = favorites.has(prompt.id)
@@ -234,40 +235,40 @@ export default function Prompts() {
                 return (
                   <div
                     key={prompt.id}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden border border-gray-100 hover:border-indigo-200 group"
+                    className="break-inside-avoid bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden border border-gray-100 hover:border-indigo-200 group"
                     onClick={() => setSelectedPrompt(prompt)}
                   >
-                    {/* Cover Image - OpenNana Style */}
-                    <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-                      {coverUrl ? (
+                    {/* Cover Image - Natural aspect ratio */}
+                    {coverUrl ? (
+                      <div className="relative bg-gray-100">
                         <img
                           src={coverUrl}
                           alt={prompt.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300"
                           loading="lazy"
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                          <span className="text-4xl opacity-50">✨</span>
-                        </div>
-                      )}
-                      {prompt.isFeatured && (
-                        <span className="absolute top-2 left-2 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full shadow-sm">
-                          推荐
-                        </span>
-                      )}
-                      {/* Favorite Button */}
-                      <button
-                        onClick={(e) => toggleFavorite(e, prompt.id)}
-                        className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
-                          isFav
-                            ? 'bg-pink-500 text-white'
-                            : 'bg-white/90 text-gray-400 hover:bg-pink-50 hover:text-pink-500'
-                        }`}
-                      >
-                        {isFav ? '❤️' : '🤍'}
-                      </button>
-                    </div>
+                        {prompt.isFeatured && (
+                          <span className="absolute top-2 left-2 px-2 py-0.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full shadow-sm">
+                            推荐
+                          </span>
+                        )}
+                        {/* Favorite Button */}
+                        <button
+                          onClick={(e) => toggleFavorite(e, prompt.id)}
+                          className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
+                            isFav
+                              ? 'bg-pink-500 text-white'
+                              : 'bg-white/90 text-gray-400 hover:bg-pink-50 hover:text-pink-500'
+                          }`}
+                        >
+                          {isFav ? '❤️' : '🤍'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full aspect-video bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                        <span className="text-4xl opacity-50">✨</span>
+                      </div>
+                    )}
 
                     {/* Card Body */}
                     <div className="p-3">
