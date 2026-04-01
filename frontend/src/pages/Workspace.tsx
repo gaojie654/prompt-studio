@@ -38,11 +38,31 @@ interface GeneratedImage {
 
 type Tab = 't2i' | 'img2img' | 't2v' | 'i2v'
 
-const TABS: { key: Tab; label: string; icon: string; badge?: string }[] = [
-  { key: 't2i', label: '文字生图片', icon: '🎨' },
-  { key: 'img2img', label: '参考图生图片', icon: '🖼️' },
-  { key: 't2v', label: '文字生视频', icon: '🎬', badge: '即将上线' },
-  { key: 'i2v', label: '图+文生视频', icon: '🎥', badge: '即将上线' },
+// SVG Icon Components for Workspace
+const TabIcon: Record<string, { icon: JSX.Element; activeIcon: JSX.Element }> = {
+  t2i: {
+    icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+    activeIcon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  },
+  img2img: {
+    icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+    activeIcon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  },
+  t2v: {
+    icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
+    activeIcon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
+  },
+  i2v: {
+    icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" /></svg>,
+    activeIcon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" /></svg>,
+  },
+}
+
+const TABS: { key: Tab; label: string; badge?: string }[] = [
+  { key: 't2i', label: '文字生图片' },
+  { key: 'img2img', label: '参考图生图片' },
+  { key: 't2v', label: '文字生视频', badge: '即将上线' },
+  { key: 'i2v', label: '图+文生视频', badge: '即将上线' },
 ]
 
 export default function Workspace() {
@@ -335,21 +355,24 @@ export default function Workspace() {
           <div className="flex gap-2">
             <button
               onClick={() => onDownload(img, false)}
-              className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm"
+              className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm flex items-center justify-center gap-2"
             >
-              ⬇️ 下载有水印图
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              下载有水印图
             </button>
             <button
               onClick={() => onDownload(img, true)}
-              className="flex-1 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors text-sm"
+              className="flex-1 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors text-sm flex items-center justify-center gap-2"
             >
-              ⬇️ 无水印下载 (20积分)
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              无水印下载 (20积分)
             </button>
           </div>
           <button
             onClick={() => onCopyLink(img)}
-            className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors border text-sm"
+            className="w-full px-4 py-2 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors border text-sm flex items-center justify-center gap-2"
           >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
             复制链接
           </button>
         </div>
@@ -410,9 +433,10 @@ export default function Workspace() {
           <label className="block text-sm font-medium text-gray-700">输入图片描述</label>
           <button
             onClick={() => setShowTemplates(!showTemplates)}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
           >
-            {showTemplates ? '收起' : '📋 快捷模板'}
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            {showTemplates ? '收起' : '快捷模板'}
           </button>
         </div>
 
@@ -482,7 +506,9 @@ export default function Workspace() {
                 : 'bg-white text-gray-600 hover:bg-gray-50 border'
             }`}
           >
-            <span>{tab.icon}</span>
+            <span className={activeTab === tab.key ? 'text-white' : 'text-gray-500'}>
+              {activeTab === tab.key ? TabIcon[tab.key].activeIcon : TabIcon[tab.key].icon}
+            </span>
             <span>{tab.label}</span>
             {tab.badge && (
               <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">
@@ -509,15 +535,19 @@ export default function Workspace() {
             <button
               onClick={handleT2iGenerate}
               disabled={t2i_generating}
-              className="w-full py-3 md:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-base md:text-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+              className="w-full py-3 md:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-base md:text-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
             >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
               {t2i_generating
-                ? `🎨 SiliconFlow (Kolors) 生成中 ${Math.round(t2i_progress)}%...`
-                : '🎨 使用 SiliconFlow (Kolors) 生成图片'}
+                ? `SiliconFlow (Kolors) 生成中 ${Math.round(t2i_progress)}%...`
+                : '使用 SiliconFlow (Kolors) 生成图片'}
             </button>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <h4 className="font-medium text-yellow-800 mb-2">💡 文字生图技巧</h4>
+              <h4 className="font-medium text-yellow-800 mb-2 flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                文字生图技巧
+              </h4>
               <ul className="text-xs md:text-sm text-yellow-700 space-y-1">
                 <li>• 纯文字生成，描述越具体效果越好</li>
                 <li>• 参考图功能请切换到「参考图生图片」标签</li>
@@ -605,15 +635,19 @@ export default function Workspace() {
             <button
               onClick={handleI2iGenerate}
               disabled={i2i_generating}
-              className="w-full py-3 md:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-base md:text-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+              className="w-full py-3 md:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-base md:text-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
             >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               {i2i_generating
-                ? `🖼️ SiliconFlow (Kolors I2I) 生成中 ${Math.round(i2i_progress)}%...`
-                : '🖼️ 使用参考图 + 文字生成图片'}
+                ? `SiliconFlow (Kolors I2I) 生成中 ${Math.round(i2i_progress)}%...`
+                : '使用参考图 + 文字生成图片'}
             </button>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <h4 className="font-medium text-yellow-800 mb-2">💡 参考图生图技巧</h4>
+              <h4 className="font-medium text-yellow-800 mb-2 flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                参考图生图技巧
+              </h4>
               <ul className="text-xs md:text-sm text-yellow-700 space-y-1">
                 <li>• 上传清晰的产品/参考图，AI 将以其为基准生成</li>
                 <li>• 在描述词里说明想把主体放在什么场景/风格中</li>
