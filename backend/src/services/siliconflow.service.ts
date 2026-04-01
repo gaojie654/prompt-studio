@@ -16,6 +16,7 @@ export interface SiliconFlowGenerateParams {
   size?: string; // e.g., "1024*1024", "768*1344", "1344*768"
   negativePrompt?: string;
   imageUrl?: string; // Reference image for img2img — uses Qwen/Qwen-Image-Edit when provided
+  modelKey?: string; // Model key to use
 }
 
 export class SiliconFlowService {
@@ -47,7 +48,7 @@ export class SiliconFlowService {
    * POST https://api.siliconflow.cn/v1/images/generations
    */
   async generateImage(params: SiliconFlowGenerateParams): Promise<string> {
-    const { promptText, size, negativePrompt, imageUrl } = params;
+    const { promptText, size, negativePrompt, imageUrl, modelKey } = params;
 
     if (!this.apiKey) {
       throw new AppError(
@@ -57,9 +58,23 @@ export class SiliconFlowService {
       );
     }
 
-    // Use different model depending on whether a reference image is provided
-    const isI2I = !!imageUrl;
-    const activeModel = isI2I ? this.i2iModel : this.t2iModel;
+    // Map modelKey to SiliconFlow model names
+    const modelMap: Record<string, string> = {
+      'kolors': 'Kwai-Kolors/Kolors',
+      'gpt-image-1': 'openai/gpt-image-1',
+      'nano-banana': 'google/gemini-2.0-flash-exp-image',
+      'nano-banana-pro': 'Pro/google/gemini-2.0-flash-exp-image',
+    };
+
+    // Determine which model to use
+    let activeModel: string;
+    if (modelKey && modelMap[modelKey]) {
+      activeModel = modelMap[modelKey];
+    } else {
+      // Fall back to default logic based on whether reference image is provided
+      const isI2I = !!imageUrl;
+      activeModel = isI2I ? this.i2iModel : this.t2iModel;
+    }
 
     // Build request body
     const requestBody: Record<string, unknown> = {

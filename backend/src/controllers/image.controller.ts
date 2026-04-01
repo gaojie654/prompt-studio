@@ -44,21 +44,28 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
   }
 
-  const { platform, promptId, imageUrl, prompt, negativePrompt } = req.body as {
-    platform: PlatformSize;
+  const { platform, model, resolution, aspectRatio, promptId, imageUrl, prompt, negativePrompt } = req.body as {
+    platform?: PlatformSize;
+    model?: string;
+    resolution?: string;
+    aspectRatio?: string;
     promptId?: string;
     imageUrl?: string;
     prompt?: string;
     negativePrompt?: string;
   };
 
-  if (!platform) {
-    throw new AppError('Platform is required', 400, 'MISSING_PLATFORM');
+  // If using custom aspectRatio, platform is optional
+  if (!platform && !aspectRatio) {
+    throw new AppError('Platform or aspectRatio is required', 400, 'MISSING_PLATFORM');
   }
 
   const image = await imageService.generate({
     userId: req.user.userId,
     platform,
+    model,
+    resolution,
+    aspectRatio,
     promptId,
     imageUrl,
     prompt,

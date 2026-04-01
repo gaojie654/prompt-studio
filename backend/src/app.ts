@@ -19,6 +19,7 @@ import membershipRoutes from './routes/membership.routes';
 import adminRoutes from './routes/admin.routes';
 import reviewRoutes from './routes/review.routes';
 import announcementRoutes from './routes/announcement.routes';
+import modelRoutes from './routes/model.routes';
 import paymentRoutes from './routes/v1/payment.routes';
 import paymentCallbackRoutes from './routes/v1/payment-callback.routes';
 
@@ -90,6 +91,9 @@ app.use('/api/v1/payment', paymentCallbackRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/admin', reviewRoutes);
 app.use('/api/v1', announcementRoutes);
+
+// Model routes
+app.use('/api/models', modelRoutes);
 
 // 404 handler
 app.use((req, _res, next) => {

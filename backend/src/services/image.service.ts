@@ -2,6 +2,7 @@ import prisma from '../utils/prisma';
 import { AppError } from '../utils/AppError';
 import { promptService } from './prompt.service';
 import { createReview } from './review.service';
+import { modelService } from './model.service';
 import config from '../config';
 import { storageService } from './storage/image-storage.service';
 import { siliconflowService } from './siliconflow.service';
@@ -57,7 +58,10 @@ const PLATFORM_SIZE_MAP_SF: Record<PlatformSize, string> = {
 export interface GenerateImageInput {
   userId: string;
   promptId?: string;
-  platform: PlatformSize;
+  platform?: PlatformSize;
+  model?: string;
+  resolution?: string;
+  aspectRatio?: string;
   imageUrl?: string; // Reference image URL
   prompt?: string; // Custom prompt text
   negativePrompt?: string;
@@ -95,15 +99,49 @@ export interface WanxResponse {
 
 export class ImageService {
   /**
-   * Generate an image using AI (Wanx API)
+   * Generate an image using AI
    */
   async generate(input: GenerateImageInput) {
-    const { userId, promptId, platform, imageUrl, prompt: customPrompt, negativePrompt } = input;
+    const { userId, promptId, platform, model: modelKey, resolution, aspectRatio, imageUrl, prompt: customPrompt, negativePrompt } = input;
 
-    // Get size specs
-    const sizeSpec = PLATFORM_SIZES[platform];
-    if (!sizeSpec) {
-      throw new AppError(`Unknown platform: ${platform}`, 400, 'INVALID_PLATFORM');
+    // Get model info
+    const selectedModel = modelKey
+      ? await modelService.getModelByKey(modelKey)
+      : await modelService.getDefaultModel();
+
+    if (!selectedModel) {
+      throw new AppError('No AI model available', 500, 'NO_MODEL_AVAILABLE');
+    }
+
+    // Determine size based on platform or custom aspectRatio
+    let width = 1024;
+    let height = 1024;
+    let sizeString = '1024x1024';
+
+    if (platform && PLATFORM_SIZES[platform as PlatformSize]) {
+      // Use platform preset dimensions
+      const sizeSpec = PLATFORM_SIZES[platform as PlatformSize];
+      width = sizeSpec.width;
+      height = sizeSpec.height;
+      sizeString = PLATFORM_SIZE_MAP_SF[platform as PlatformSize] || '1024x1024';
+    } else if (aspectRatio) {
+      // Calculate size based on aspectRatio and resolution
+      const resolutionMap: Record<string, { width: number; height: number }> = {
+        sd: { width: 512, height: 512 },
+        hd: { width: 1024, height: 1024 },
+        uhd: { width: 2048, height: 2048 },
+        '4k': { width: 4096, height: 4096 },
+      };
+      const baseRes = resolutionMap[resolution || 'hd'] || resolutionMap.hd;
+      const [w, h] = aspectRatio.split(':').map(Number);
+      // Use the larger dimension as the base
+      const maxDim = Math.max(baseRes.width, baseRes.height);
+      width = Math.round(maxDim * (w / Math.max(w, h)));
+      height = Math.round(maxDim * (h / Math.max(w, h)));
+      // Round to nearest 64 for model compatibility
+      width = Math.round(width / 64) * 64;
+      height = Math.round(height / 64) * 64;
+      sizeString = `${width}x${height}`;
     }
 
     // Check user credits/membership
@@ -116,11 +154,11 @@ export class ImageService {
       throw new AppError('User not found', 404, 'USER_NOT_FOUND');
     }
 
-    // Check credits (simplified - in production, check membership and balance)
-    const creditsRequired = 1;
+    // Calculate credits required based on model
+    const creditsRequired = selectedModel.credit || 10;
     const userCredits = user.membership?.credits || 0;
     if (userCredits < creditsRequired) {
-      throw new AppError('Insufficient credits', 402, 'INSUFFICIENT_CREDITS');
+      throw new AppError(`Insufficient credits. Need ${creditsRequired}, have ${userCredits}`, 402, 'INSUFFICIENT_CREDITS');
     }
 
     // Get prompt content if promptId provided
@@ -140,9 +178,9 @@ export class ImageService {
         userId,
         promptId: promptId || null,
         url: '', // Will be updated when generation completes
-        filename: `generated_${platform}_${Date.now()}.png`,
-        width: sizeSpec.width,
-        height: sizeSpec.height,
+        filename: `generated_${platform || 'custom'}_${Date.now()}.png`,
+        width,
+        height,
       },
     });
 
@@ -156,23 +194,21 @@ export class ImageService {
 
     // Get size parameter - prefer SiliconFlow (Kolors) if configured, otherwise use Wanx
     const useSiliconFlow = siliconflowService.isConfigured();
-    const size = useSiliconFlow
-      ? PLATFORM_SIZE_MAP_SF[platform] || '1024x1024'
-      : PLATFORM_SIZE_MAP[platform] || '1280*1280';
 
     // Call image generation API
     try {
       let imageUrlResult: string;
 
       if (useSiliconFlow) {
-        // Use SiliconFlow Kolors
+        // Use SiliconFlow with selected model
         imageUrlResult = await siliconflowService.generateImage({
           promptText,
-          size,
+          size: sizeString,
           negativePrompt,
           imageUrl,
+          modelKey: selectedModel.key,
         });
-        console.info(`[ImageService] Generated image using SiliconFlow Kolors (${size})`);
+        console.info(`[ImageService] Generated image using ${selectedModel.name} (${sizeString})`);
       } else {
         // Fall back to Wanx
         imageUrlResult = await this.callWanxApi({

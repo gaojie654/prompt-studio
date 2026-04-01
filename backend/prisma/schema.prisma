@@ -231,3 +231,19 @@ model Announcement {
 
   @@map("announcements")
 }
+
+model AIModel {
+  id          String   @id @default(cuid())
+  key         String   @unique  // API identifier like 'kolors', 'gpt-image-1', 'nano-banana'
+  name        String             // Display name like 'Kolors', 'GPT-5 Image'
+  provider    String             // Provider like 'siliconflow', 'openai', 'google'
+  description String?
+  credit      Int      @default(10)  // Credits per image
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)  // Default model for new users
+  config      Json?              // Additional config like model parameters
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ai_models")
+}
