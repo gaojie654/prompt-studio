@@ -1,4 +1,4 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
@@ -12,13 +12,23 @@ interface Announcement {
   isPopup: boolean
 }
 
+const NAV_ITEMS = [
+  { path: '/workspace', label: '工作台', icon: '🎨' },
+  { path: '/prompts', label: '提示词库', icon: '💡' },
+  { path: '/recharge', label: '充值', icon: '💳' },
+  { path: '/membership', label: '会员', icon: '👑' },
+  { path: '/feedback', label: '意见反馈', icon: '💬' },
+]
+
 export default function Layout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<{ name?: string; email: string } | null>(null)
   const [credits, setCredits] = useState(0)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [popupAnnouncement, setPopupAnnouncement] = useState<Announcement | null>(null)
+  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -29,7 +39,6 @@ export default function Layout() {
     fetchPopupAnnouncement()
   }, [])
 
-  // Close popup on Escape key
   useEffect(() => {
     if (!popupAnnouncement) return
     const handler = (e: KeyboardEvent) => {
@@ -89,247 +98,243 @@ export default function Layout() {
     navigate('/')
   }
 
+  const isActive = (path: string) => location.pathname === path
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">P</span>
-                </div>
-                <span className="font-bold text-xl text-gray-900">Prompt Studio</span>
-              </Link>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar - Desktop */}
+      <aside className={`hidden md:flex flex-col bg-white border-r border-gray-200 shadow-sm transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'} sticky top-0 h-screen`}>
+        {/* Logo */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-sm">P</span>
             </div>
+            {!collapsed && <span className="font-bold text-xl text-gray-900">Prompt Studio</span>}
+          </Link>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            {collapsed ? '→' : '←'}
+          </button>
+        </div>
 
-            {/* Desktop Nav */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link
-                to="/workspace"
-                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
-              >
-                工作台
-              </Link>
-              <Link
-                to="/prompts"
-                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
-              >
-                提示词库
-              </Link>
-              <Link
-                to="/recharge"
-                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
-              >
-                充值
-              </Link>
-              <Link
-                to="/membership"
-                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
-              >
-                会员
-              </Link>
-              <Link
-                to="/feedback"
-                className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
-              >
-                意见反馈
-              </Link>
+        {/* Navigation */}
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                isActive(item.path)
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-600'
+              }`}
+            >
+              <span className="text-lg flex-shrink-0">{item.icon}</span>
+              {!collapsed && <span className="font-medium">{item.label}</span>}
+            </Link>
+          ))}
+        </nav>
 
-              {isLoggedIn ? (
-                <>
-                  <Link
-                    to="/profile"
-                    className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
-                  >
-                    个人中心
-                  </Link>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 rounded-full">
-                      <span className="text-indigo-600 font-medium">{credits}</span>
-                      <span className="text-gray-500 text-sm">额度</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-600 font-medium text-sm">
-                          {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
-                        </span>
-                      </div>
-                      <button
-                        onClick={handleLogout}
-                        className="text-sm text-gray-500 hover:text-red-600 transition-colors"
-                      >
-                        退出登录
-                      </button>
-                    </div>
+        {/* User Section */}
+        <div className="border-t border-gray-100 p-3">
+          {isLoggedIn ? (
+            <div className={`space-y-3 ${collapsed ? 'flex flex-col items-center' : ''}`}>
+              <Link
+                to="/profile"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                  isActive('/profile')
+                    ? 'bg-indigo-50 text-indigo-600'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-indigo-600 font-medium text-sm">
+                    {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+                {!collapsed && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user?.name || '用户'}</p>
+                    <p className="text-xs text-gray-500">{credits} 额度</p>
                   </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Link
-                    to="/login"
-                    className="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
-                  >
-                    登录
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-                  >
-                    注册
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
+                )}
+              </Link>
               <button
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="p-2 rounded-md text-gray-600 hover:text-gray-900"
+                onClick={handleLogout}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors ${
+                  collapsed ? 'justify-center' : ''
+                }`}
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {showMobileMenu ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
+                <span className="text-lg">🚪</span>
+                {!collapsed && <span className="text-sm font-medium">退出登录</span>}
               </button>
             </div>
-          </div>
+          ) : (
+            <div className={`space-y-2 ${collapsed ? 'flex flex-col items-center' : ''}`}>
+              <Link
+                to="/login"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors ${
+                  collapsed ? 'justify-center' : ''
+                }`}
+              >
+                <span className="text-lg">👤</span>
+                {!collapsed && <span className="font-medium">登录</span>}
+              </Link>
+              <Link
+                to="/register"
+                className={`flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors ${
+                  collapsed ? 'w-10 h-10 p-0' : ''
+                }`}
+              >
+                <span className="text-lg">{collapsed ? '+' : '注册'}</span>
+              </Link>
+            </div>
+          )}
         </div>
+      </aside>
 
-        {/* Mobile menu */}
-        {showMobileMenu && (
-          <div className="md:hidden bg-white border-t">
-            <div className="px-4 py-3 space-y-1">
-              <Link
-                to="/workspace"
-                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                工作台
-              </Link>
-              <Link
-                to="/prompts"
-                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                提示词库
-              </Link>
-              <Link
-                to="/recharge"
-                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                充值
-              </Link>
-              <Link
-                to="/membership"
-                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                会员
-              </Link>
-              <Link
-                to="/feedback"
-                className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                意见反馈
-              </Link>
-              {isLoggedIn ? (
-                <>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Top Bar - Mobile Only */}
+        <header className="md:hidden bg-white shadow-sm sticky top-0 z-50">
+          <div className="flex items-center justify-between h-14 px-4">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">P</span>
+              </div>
+              <span className="font-bold text-lg text-gray-900">Prompt Studio</span>
+            </Link>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="p-2 rounded-lg text-gray-600 hover:text-gray-900"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {showMobileMenu ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile menu */}
+          {showMobileMenu && (
+            <div className="bg-white border-t">
+              <div className="px-4 py-3 space-y-1">
+                {NAV_ITEMS.map((item) => (
                   <Link
-                    to="/profile"
-                    className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                      isActive(item.path)
+                        ? 'bg-indigo-50 text-indigo-600'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
                     onClick={() => setShowMobileMenu(false)}
                   >
-                    个人中心
+                    <span className="text-lg">{item.icon}</span>
+                    <span>{item.label}</span>
                   </Link>
-                  <div className="pt-2 mt-2 border-t">
-                    <div className="flex items-center gap-3 px-3 py-2">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-600 font-medium text-sm">
-                          {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{user?.name || '用户'}</p>
-                        <p className="text-xs text-gray-500">{credits} 额度</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        handleLogout()
-                        setShowMobileMenu(false)
-                      }}
-                      className="block w-full text-left px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg"
+                ))}
+                {isLoggedIn ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
+                      onClick={() => setShowMobileMenu(false)}
                     >
-                      退出登录
-                    </button>
+                      <span className="text-lg">👤</span>
+                      <span>个人中心</span>
+                    </Link>
+                    <div className="pt-2 mt-2 border-t">
+                      <div className="flex items-center gap-3 px-3 py-2">
+                        <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                          <span className="text-indigo-600 font-medium text-sm">
+                            {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{user?.name || '用户'}</p>
+                          <p className="text-xs text-gray-500">{credits} 额度</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          handleLogout()
+                          setShowMobileMenu(false)
+                        }}
+                        className="w-full text-left px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-xl"
+                      >
+                        🚪 退出登录
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="pt-2 mt-2 border-t space-y-1">
+                    <Link
+                      to="/login"
+                      className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <span className="text-lg">👤</span>
+                      <span>登录</span>
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 text-white rounded-xl font-medium"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      注册
+                    </Link>
                   </div>
-                </>
-              ) : (
-                <div className="pt-2 mt-2 border-t space-y-1">
-                  <Link
-                    to="/login"
-                    className="block px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    登录
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block px-3 py-2.5 text-indigo-600 bg-indigo-50 rounded-lg font-medium"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    注册
-                  </Link>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </nav>
+          )}
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <Outlet />
-      </main>
+        {/* Page Content */}
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          <Outlet />
+        </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8 md:py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-center md:text-left">
-              <div className="text-xl font-bold text-white mb-1">Prompt Studio</div>
-              <div className="text-sm">AI驱动的营销图片生成工具</div>
+        {/* Footer */}
+        <footer className="bg-gray-900 text-gray-400 py-6 md:py-8 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="text-center md:text-left">
+                <div className="text-lg font-bold text-white mb-1">Prompt Studio</div>
+                <div className="text-sm">AI驱动的营销图片生成工具</div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
+                {NAV_ITEMS.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="hover:text-white transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <Link to="/profile" className="hover:text-white transition-colors">个人中心</Link>
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm">
-              <Link to="/workspace" className="hover:text-white transition-colors">工作台</Link>
-              <Link to="/prompts" className="hover:text-white transition-colors">提示词库</Link>
-              <Link to="/recharge" className="hover:text-white transition-colors">充值</Link>
-              <Link to="/membership" className="hover:text-white transition-colors">会员</Link>
-              <Link to="/feedback" className="hover:text-white transition-colors">意见反馈</Link>
-              <Link to="/profile" className="hover:text-white transition-colors">个人中心</Link>
+            <div className="mt-6 pt-6 border-t border-gray-800 text-center text-xs md:text-sm">
+              © 2026 Prompt Studio. All rights reserved.
             </div>
           </div>
-          <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-gray-800 text-center text-xs md:text-sm">
-            © 2026 Prompt Studio. All rights reserved.
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
 
       {/* Popup Announcement */}
       {popupAnnouncement && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={(e) => {
-            // Close when clicking the backdrop (outside the modal box)
             if (e.target === e.currentTarget) {
               dismissAnnouncement()
             }
