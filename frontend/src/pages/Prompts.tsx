@@ -43,6 +43,7 @@ export default function Prompts() {
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [copied, setCopied] = useState(false)
+  const [activeLang, setActiveLang] = useState<'en' | 'zh'>('en')
 
   useEffect(() => {
     const saved = localStorage.getItem('promptFavorites')
@@ -133,6 +134,13 @@ export default function Prompts() {
     }
     return null
   }
+
+  // Reset language tab when opening a new prompt
+  useEffect(() => {
+    if (selectedPrompt) {
+      setActiveLang(selectedPrompt.contentZh ? 'en' : 'en')
+    }
+  }, [selectedPrompt?.id])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -353,15 +361,29 @@ export default function Prompts() {
           >
             {/* Image Gallery - Top */}
             {selectedPrompt.images && selectedPrompt.images.length > 0 && (
-              <div className="relative bg-gray-100 aspect-video overflow-hidden">
-                <img
-                  src={selectedPrompt.images[0].url}
-                  alt={selectedPrompt.title}
-                  className="w-full h-full object-contain"
-                />
+              <div className="relative bg-gray-100">
+                {/* Main Image */}
+                <div className="aspect-video overflow-hidden">
+                  <img
+                    src={selectedPrompt.images[0].url}
+                    alt={selectedPrompt.title}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                {/* Thumbnails */}
                 {selectedPrompt.images.length > 1 && (
-                  <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
-                    +{selectedPrompt.images.length - 1} 更多
+                  <div className="flex gap-2 p-3 overflow-x-auto">
+                    {selectedPrompt.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img.url}
+                        alt={`Image ${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+                        onClick={() => {
+                          // Could implement image lightbox here
+                        }}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -397,13 +419,23 @@ export default function Prompts() {
               <div className="border-b border-gray-200 mb-5">
                 <div className="flex gap-6">
                   <button
-                    className="pb-3 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600"
+                    onClick={() => setActiveLang('en')}
+                    className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                      activeLang === 'en'
+                        ? 'text-indigo-600 border-indigo-600'
+                        : 'text-gray-500 border-transparent hover:text-gray-700'
+                    }`}
                   >
                     English
                   </button>
                   {selectedPrompt.contentZh && (
                     <button
-                      className="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
+                      onClick={() => setActiveLang('zh')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                        activeLang === 'zh'
+                          ? 'text-indigo-600 border-indigo-600'
+                          : 'text-gray-500 border-transparent hover:text-gray-700'
+                      }`}
                     >
                       中文
                     </button>
@@ -414,11 +446,17 @@ export default function Prompts() {
               {/* Prompt Content */}
               <div className="bg-gray-50 rounded-2xl p-4 mb-5 relative group">
                 <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed max-h-64 overflow-y-auto">
-                  {selectedPrompt.content}
+                  {activeLang === 'zh' && selectedPrompt.contentZh
+                    ? selectedPrompt.contentZh
+                    : selectedPrompt.content}
                 </pre>
                 {/* Copy Button - Prominent */}
                 <button
-                  onClick={() => handleCopy(selectedPrompt.content)}
+                  onClick={() => handleCopy(
+                    activeLang === 'zh' && selectedPrompt.contentZh
+                      ? selectedPrompt.contentZh
+                      : selectedPrompt.content
+                  )}
                   className={`absolute top-3 right-3 px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm ${
                     copied
                       ? 'bg-green-500 text-white'
@@ -438,7 +476,11 @@ export default function Prompts() {
                   🚀 使用此提示词
                 </button>
                 <button
-                  onClick={() => handleCopy(selectedPrompt.content)}
+                  onClick={() => handleCopy(
+                    activeLang === 'zh' && selectedPrompt.contentZh
+                      ? selectedPrompt.contentZh
+                      : selectedPrompt.content
+                  )}
                   className="px-6 py-3.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm"
                 >
                   📋 复制
