@@ -29,18 +29,18 @@ const ASPECT_RATIOS = [
   { key: '2:3', name: '2:3 人像' },
 ]
 
-// Platform presets
+// Platform presets with fixed dimensions
 const PLATFORMS = [
-  { key: 'xiaohongshu_cover_v', name: '小红书封面(竖)' },
-  { key: 'xiaohongshu_cover_s', name: '小红书封面(方)' },
-  { key: 'douyin_cover', name: '抖音封面(竖)' },
-  { key: 'douyin_post', name: '抖音贴文(横)' },
-  { key: 'gzh_cover', name: '公众号头条封面' },
-  { key: 'gzh_cover_sub', name: '公众号次条封面' },
-  { key: 'taobao_main', name: '淘宝主图' },
-  { key: 'pdd_main', name: '拼多多主图' },
-  { key: 'jd_main', name: '京东主图' },
-  { key: 'custom', name: '自定义' },
+  { key: 'xiaohongshu_cover_v', name: '小红书封面(竖)', width: 1080, height: 1440 },
+  { key: 'xiaohongshu_cover_s', name: '小红书封面(方)', width: 1080, height: 1080 },
+  { key: 'douyin_cover', name: '抖音封面(竖)', width: 1080, height: 1920 },
+  { key: 'douyin_post', name: '抖音贴文(横)', width: 1200, height: 627 },
+  { key: 'gzh_cover', name: '公众号头条封面', width: 900, height: 383 },
+  { key: 'gzh_cover_sub', name: '公众号次条封面', width: 200, height: 200 },
+  { key: 'taobao_main', name: '淘宝主图', width: 800, height: 800 },
+  { key: 'pdd_main', name: '拼多多主图', width: 750, height: 352 },
+  { key: 'jd_main', name: '京东主图', width: 800, height: 800 },
+  { key: 'custom', name: '自定义（可调比例）', width: 0, height: 0 },
 ]
 
 // Quick prompt templates
@@ -198,8 +198,14 @@ export default function Workspace() {
     }
   }
 
-  // Get aspect ratio style
+  // Get aspect ratio style based on platform or custom ratio
   const getAspectRatioStyle = () => {
+    if (platform !== 'custom') {
+      const preset = PLATFORMS.find(p => p.key === platform)
+      if (preset && preset.width && preset.height) {
+        return { aspectRatio: `${preset.width}/${preset.height}` }
+      }
+    }
     const [w, h] = aspectRatio.split(':').map(Number)
     return { aspectRatio: `${w}/${h}` }
   }
@@ -248,7 +254,7 @@ export default function Workspace() {
 
           {/* Settings Row - All in one compact row */}
           <div className="bg-white rounded-xl p-4 border border-gray-200">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className={`grid gap-3 ${platform === 'custom' ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3'}`}>
               {/* Model */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">模型</label>
@@ -277,20 +283,6 @@ export default function Workspace() {
                 </select>
               </div>
 
-              {/* Aspect Ratio */}
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">图片比例</label>
-                <select
-                  value={aspectRatio}
-                  onChange={e => setAspectRatio(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                >
-                  {ASPECT_RATIOS.map(r => (
-                    <option key={r.key} value={r.key}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
-
               {/* Platform */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">平台预设</label>
@@ -304,6 +296,22 @@ export default function Workspace() {
                   ))}
                 </select>
               </div>
+
+              {/* Aspect Ratio - Only show when platform is custom */}
+              {platform === 'custom' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">图片比例</label>
+                  <select
+                    value={aspectRatio}
+                    onChange={e => setAspectRatio(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  >
+                    {ASPECT_RATIOS.map(r => (
+                      <option key={r.key} value={r.key}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Credit Info */}
@@ -453,11 +461,9 @@ export default function Workspace() {
             {/* Preview Header */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-medium text-gray-900 text-sm">生成结果</h3>
-              {aspectRatio && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                  {aspectRatio}
-                </span>
-              )}
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                {platform === 'custom' ? aspectRatio : PLATFORMS.find(p => p.key === platform)?.name}
+              </span>
             </div>
 
             {/* Preview Area */}
