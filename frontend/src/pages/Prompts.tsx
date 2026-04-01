@@ -444,21 +444,15 @@ export default function Prompts() {
                 </div>
               </div>
 
-              {/* Prompt Content */}
-              <div className="bg-gray-50 rounded-2xl p-4 mb-5 relative group">
-                <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed max-h-64 overflow-y-auto">
-                  {activeLang === 'zh' && selectedPrompt.contentZh
-                    ? selectedPrompt.contentZh
-                    : selectedPrompt.content}
-                </pre>
-                {/* Copy Button - Prominent */}
+              {/* Copy Button - Above content */}
+              <div className="flex justify-end mb-3">
                 <button
                   onClick={() => handleCopy(
                     activeLang === 'zh' && selectedPrompt.contentZh
                       ? selectedPrompt.contentZh
                       : selectedPrompt.content
                   )}
-                  className={`absolute top-3 right-3 px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm ${
+                  className={`px-5 py-2 rounded-xl text-sm font-medium transition-all shadow-sm ${
                     copied
                       ? 'bg-green-500 text-white'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -466,6 +460,15 @@ export default function Prompts() {
                 >
                   {copied ? '✓ 已复制' : '📋 一键复制'}
                 </button>
+              </div>
+
+              {/* Prompt Content */}
+              <div className="bg-gray-50 rounded-2xl p-4 mb-5">
+                <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed max-h-64 overflow-y-auto">
+                  {activeLang === 'zh' && selectedPrompt.contentZh
+                    ? selectedPrompt.contentZh
+                    : selectedPrompt.content}
+                </pre>
               </div>
 
               {/* Action Buttons */}
