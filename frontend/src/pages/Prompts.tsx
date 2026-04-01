@@ -4,6 +4,51 @@ import { useNavigate } from 'react-router-dom'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
+// SVG Icons for consistent design
+const Icons = {
+  heart: (filled: boolean) => (
+    <svg className={`w-4 h-4 ${filled ? 'text-pink-500' : 'text-gray-400'}`} viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  ),
+  copy: (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+  ),
+  check: (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  eye: (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  ),
+  thumbUp: (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+    </svg>
+  ),
+  download: (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+  ),
+  rocket: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+    </svg>
+  ),
+  sparkles: (
+    <svg className="w-10 h-10 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+    </svg>
+  ),
+}
+
 interface Prompt {
   id: string
   title: string
@@ -197,7 +242,8 @@ export default function Prompts() {
               }}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-pink-50 text-pink-600 hover:bg-pink-100 transition-colors border border-pink-100"
             >
-              ❤️ 收藏 ({favorites.size})
+              {Icons.heart(true)}
+              收藏 ({favorites.size})
             </button>
           </div>
         </div>
@@ -261,12 +307,12 @@ export default function Prompts() {
                               : 'bg-white/90 text-gray-400 hover:bg-pink-50 hover:text-pink-500'
                           }`}
                         >
-                          {isFav ? '❤️' : '🤍'}
+                          {Icons.heart(isFav)}
                         </button>
                       </div>
                     ) : (
                       <div className="w-full aspect-video bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                        <span className="text-4xl opacity-50">✨</span>
+                        {Icons.sparkles}
                       </div>
                     )}
 
@@ -288,10 +334,14 @@ export default function Prompts() {
                       )}
 
                       {/* Stats */}
-                      <div className="flex items-center justify-between text-xs text-gray-400">
-                        <div className="flex gap-3">
-                          <span>👍 {prompt.likeCount}</span>
-                          <span>📥 {prompt.useCount}</span>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          {Icons.thumbUp}
+                          <span>{prompt.likeCount}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {Icons.download}
+                          <span>{prompt.useCount}</span>
                         </div>
                       </div>
                     </div>
@@ -399,9 +449,18 @@ export default function Prompts() {
                 </h2>
                 <div className="flex items-center gap-4 text-sm text-gray-500">
                   <span>by {selectedPrompt.author?.name ?? '系统导入'}</span>
-                  <span className="flex items-center gap-1">👁 {selectedPrompt.viewCount}</span>
-                  <span className="flex items-center gap-1">👍 {selectedPrompt.likeCount}</span>
-                  <span className="flex items-center gap-1">📥 {selectedPrompt.useCount}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-gray-400">{Icons.eye}</span>
+                    {selectedPrompt.viewCount}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-gray-400">{Icons.thumbUp}</span>
+                    {selectedPrompt.likeCount}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-gray-400">{Icons.download}</span>
+                    {selectedPrompt.useCount}
+                  </span>
                 </div>
               </div>
 
@@ -452,13 +511,14 @@ export default function Prompts() {
                       ? selectedPrompt.contentZh
                       : selectedPrompt.content
                   )}
-                  className={`px-5 py-2 rounded-xl text-sm font-medium transition-all shadow-sm ${
+                  className={`px-5 py-2 rounded-xl text-sm font-medium transition-all shadow-sm flex items-center gap-2 ${
                     copied
                       ? 'bg-green-500 text-white'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
                 >
-                  {copied ? '✓ 已复制' : '📋 一键复制'}
+                  {copied ? Icons.check : Icons.copy}
+                  {copied ? '已复制' : '一键复制'}
                 </button>
               </div>
 
@@ -477,7 +537,8 @@ export default function Prompts() {
                   onClick={() => handleUsePrompt(selectedPrompt)}
                   className="flex-1 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors text-sm flex items-center justify-center gap-2"
                 >
-                  🚀 使用此提示词
+                  {Icons.rocket}
+                  使用此提示词
                 </button>
                 <button
                   onClick={() => handleCopy(
@@ -485,19 +546,21 @@ export default function Prompts() {
                       ? selectedPrompt.contentZh
                       : selectedPrompt.content
                   )}
-                  className="px-6 py-3.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm"
+                  className="px-6 py-3.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm flex items-center justify-center gap-2"
                 >
-                  📋 复制
+                  {Icons.copy}
+                  复制
                 </button>
                 <button
                   onClick={(e) => toggleFavorite(e, selectedPrompt.id)}
-                  className={`px-6 py-3.5 rounded-xl font-medium transition-colors border text-sm ${
+                  className={`px-6 py-3.5 rounded-xl font-medium transition-colors border text-sm flex items-center gap-2 ${
                     favorites.has(selectedPrompt.id)
                       ? 'bg-pink-50 border-pink-200 text-pink-600'
                       : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  {favorites.has(selectedPrompt.id) ? '❤️ 已收藏' : '🤍 收藏'}
+                  {Icons.heart(favorites.has(selectedPrompt.id))}
+                  {favorites.has(selectedPrompt.id) ? '已收藏' : '收藏'}
                 </button>
               </div>
             </div>
